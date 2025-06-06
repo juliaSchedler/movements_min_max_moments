@@ -1,5 +1,5 @@
 ---
-title: "Full Sonification"
+title: "Sonification Design and Music"
 format: 
   html:
     code-fold: true

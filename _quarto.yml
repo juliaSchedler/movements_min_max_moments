@@ -18,9 +18,7 @@ website:
       #       text: Mins and Maxes
       #     - href: snippets/everything.qmd
       #       text: Everything and Exceedances
-      - section: "Video Generation"
-        contents:
-          - href: video/videos.qmd
+      - href: video.qmd
       - href: about.qmd
         text: "About Us"
 

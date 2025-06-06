@@ -1,0 +1,6 @@
+---
+title: "Animated Video"
+format: html
+---
+
+Please check back here for a video of the sonification with an animated data visualization!
