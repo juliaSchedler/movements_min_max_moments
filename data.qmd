@@ -245,7 +245,9 @@ ggplot(monthly_weather, aes(x = date)) +
 
 ## Missing Data
 
-## Summary statistics
+As you will hear (and see) in the animation, there are occasionally missing data points, resulting in silence! 
+
+## Output data
 
 ```{r}
 #| warning: false

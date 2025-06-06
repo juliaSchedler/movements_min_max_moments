@@ -4,11 +4,11 @@ title: "About Us"
 
 This sonification was joint work among Dr. Julia Schedler, Donya Behroozi, Josh Schneider, and Dr. Sinem Demirci.
 
--   Dr. Julia Schedler is Assistant Professor in the Statistics Department in the Bailey College of Science and Mathematics at Cal Poly SLO. Besides sonification, Dr. Schedler works on time series modeling and spatial modeling and visualization.
+- [Dr. Julia Schedler](https://statistics.calpoly.edu/julia-schedler) is Assistant Professor in the Statistics Department in the Bailey College of Science and Mathematics at Cal Poly SLO. Besides sonification, Dr. Schedler works on time series modeling, spatial modeling, and visualization.
 
 -   Josh Schneider is an undergraduate student at Cal Poly, and choreographed the movements
 
--   Donya Behroozi is an undergraduate student at Cal Poly, and helped develop the sonification function
+-   Donya Behroozi is an undergraduate student at Cal Poly, and helped develop the sonification function code
 
 -   Dr. Sinem Demirci is a lecturer in the Statistics Department at Cal Poly and guided discussions of sonification design and pedagogy
 
@@ -17,3 +17,5 @@ Additionally, we are incredibly grateful to the feedback from our C3RC collabora
 Further information is available on the [3CRC Webpage](https://guides.lib.calpoly.edu/steam).
 
 Additional gratitude to everyone on the math department side of the 2nd floor of faculty offices east, especially Dr. Charlotte Mann and Dr. Ulric Lund, for listening to drafts of the sonifications.
+
+And finally, I am extremely grateful to the funding organization within Cal Poly, unfortunately I did not get my ducks in a row so I will need to update with that information later. 🦆

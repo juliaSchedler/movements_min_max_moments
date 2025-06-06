@@ -7,7 +7,7 @@ website:
     style: "docked"
     contents:
       - href: index.qmd
-        text: Full Sonification
+        text: Sonified Animation
       - href: data.qmd
         text: Data and Processing
       # - section: "Sonification Design"
@@ -18,7 +18,8 @@ website:
       #       text: Mins and Maxes
       #     - href: snippets/everything.qmd
       #       text: Everything and Exceedances
-      - href: video.qmd
+      - href: SonifDesign.qmd
+        text: Design
       - href: about.qmd
         text: "About Us"
 
@@ -30,3 +31,4 @@ format:
 
 editor: visual
 
+bibliography: mmmm.bib
