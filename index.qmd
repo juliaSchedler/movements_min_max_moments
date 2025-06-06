@@ -1,0 +1,155 @@
+---
+title: "Full Sonification"
+format: 
+  html:
+    code-fold: true
+execute: 
+  freeze: auto # re-render only when source changes.
+---
+
+```{r}
+#| label: setup
+#| message: false
+#| output: false
+library(gm)
+library(music)
+library(tidyverse)
+library(fpp3)
+
+## read in pre-processed data
+load("data/monthly_weather")
+
+```
+
+## Splitting into parts
+
+After a brief conversation with the choreographer, Josh Schneider, it was determined that having all three series (maximum, minimum, average) at once was a bit much for the full history of the data set. As an homage to our shared passion for musical theatre, we settled on a "three act" (three part) structure. As such, we need some cut points for the sonification. The first is when the all time high temperature for the entire history of Paso Robles was hit:
+
+```{r}
+## New high for Paso Robles
+change_date_part_1 <- which.max(monthly_weather$max);
+monthly_weather[change_date_part_1,c("date", "max", "min")]
+```
+
+Auditorially, we represent this change by splitting from only tracking the average to tracking both the maximum and the minimum.
+
+For the second part, the year that climate scientists began building models predicting the increasing temperatures we have seen on a global scale, 1977. Auditorially, we represent this as adding back in the average, but also tracking every time a new seasonal extreme is reached, where we start the clock at 1977.
+
+```{r}
+## 1977 the year exxon scientists knew about climate change (allegedly)
+change_date_part_2 <- min(which(monthly_weather$year == 1977))
+monthly_weather[change_date_part_2,]
+```
+
+## Sonification method
+
+Sonifcations are generated via the custom function `data_to_sonif()`, which maps the largest value in the data set to a pre-specified low note, and the highest value to a pre-specified low note, then maps values in between maintaining the spacing between points rounded to the 12 tone equal tempered scale. For example, see how we sonify the five number summary to one octave:
+
+![Visualization of the pitch mapping sonification method.](images/piano.png)
+
+```{r} 
+#| label: load-sonif
+source("code/data_to_soniof_all.R")
+```
+
+## Part 1: Just averages
+
+The averages are sonified to a two octave range by mapping the lowest value to the low pitch of the range and the high note. As specified further below, the average will be played by a viola. 
+
+```{r}
+#| label: change_date
+#| output: false
+
+
+## sonify first and last parts separately
+sonif_all_mean = c(
+  data_to_sonif_all(monthly_weather$mean[1:(change_date_part_1-1)], low = 3, high = 4),
+  data_to_sonif_all(monthly_weather$mean[change_date_part_1:(change_date_part_2-1)], low = 3, high = 4),
+  data_to_sonif_all(monthly_weather$mean[change_date_part_2:nrow(monthly_weather)], low = 3, high = 4)
+  )                                   
+sonif_all_mean[change_date_part_1:(change_date_part_2-1)] <- NA
+
+
+pattern = rep("eighth", times = length(sonif_all_mean))
+## lines for avg and max 
+line_avg <- Line(pitches = sonif_all_mean, durations = pattern, 
+                 name = "Monthly Average")
+
+```
+
+## Part 2: Highs and Lows
+
+The variability of the monthly maximum temperatures is slightly higher than that of the monthly minimum (Range of max: `{r}diff(range(monthly_weather$max, na.rm = T))`, Range of min:`{r}diff(range(monthly_weather$min, na.rm = T))`; Standard deviation of max: `{r} round(sd(monthly_weather$max, na.rm = T), 2)`, `{r} round(sd(monthly_weather$min, na.rm = T), 2)` ). To represent this difference auditorially, we allow the maximum to span 3 octaves (C5 to C8) and the minumum to span 2 octaves (C3 to C5). Note that the minimum has the same octave span as the mean, which has a range of `{r}round(diff(range(monthly_weather$mean, na.rm = T)), 2)` and a standard deviation of `{r} round(sd(monthly_weather$mean, na.rm = T), 2)`. 
+
+As defined below, the maximum is played by a celesta (a keyboard instrument) and the minimum is played by a bassoon.
+
+```{r}
+
+sonif_all_max = c(
+  data_to_sonif_all(monthly_weather$max[1:(change_date_part_1-1)], low = 5, high = 7),
+  data_to_sonif_all(monthly_weather$max[change_date_part_1:(change_date_part_2-1)], low = 5, high = 7),
+  data_to_sonif_all(monthly_weather$max[change_date_part_2:nrow(monthly_weather)], low = 5, high = 7)
+  )   
+sonif_all_max[1:change_date_part_1] <- NA
+
+line_max <- Line(pitches = sonif_all_max, durations = pattern, 
+                 name = "Monthly Max of Daily Maximum")
+
+sonif_all_min = c(
+  data_to_sonif_all(monthly_weather$min[1:(change_date_part_1-1)], low = 3, high = 4),
+  data_to_sonif_all(monthly_weather$min[change_date_part_1:(change_date_part_2-1)], low = 3, high = 4),
+  data_to_sonif_all(monthly_weather$min[change_date_part_2:nrow(monthly_weather)], low = 3, high = 4)
+  )   
+sonif_all_min[1:change_date_part_1] <- NA
+
+line_min <- Line(pitches = sonif_all_min, durations = pattern, 
+                 name = "Monthly Min of Daily Minimum")
+```
+
+## Part 3: Exceedances
+
+While it is an issue that temperatures on average are increasing, it is not audible on the scales played here since the change is very slow over time. However, the average is not the only statistic available to us, and in times of change we don't necessarily want an estimate of just "typical" values.
+
+One important tool for understanding how the extremes of a time series are changing over time are exceedance occurrances: tracking when a new high or a new low is hit. 
+
+If we just tracked new all time highs and lows, we would essentially only capture the worst winter/summer. Instead, we start the tracker at 1977 for reasons mentioned above,and track each season (Winter, Spring, Summer, Fall) so we see a sudden influx of "new" maximums and minumums as we begin the tracking, but then once we initialize we can then track when unusually high or low values occurr. I set the pitches at middle C for both to avoid the sonification becoming too busy.
+
+As defined later, the exceedances occurrances are played with a viola to elevate the importance of exceedance occurrances as a statistic along with the average, which is also played by the viola.
+
+```{r}
+#| label: seas_exceedance
+
+sonif_all_new_max = rep(NA, times = length(sonif_all_mean))
+sonif_all_new_max[monthly_weather$new_max] <- "C4"
+sonif_all_new_min = rep(NA, times = length(sonif_all_mean))
+sonif_all_new_min[monthly_weather$new_max] <- "C4"
+
+pattern_seas <- rep("quarter", times = length(sonif_all_max))
+
+line_max_new_seas <- Line(pitches = sonif_all_new_max, durations = pattern, name = "New Seasonal Maximum Reached")
+
+line_min_new_seas <- Line(pitches = sonif_all_new_max, durations = pattern, name = "New Seasonal Minimum Reached")
+
+```
+
+## Create the music!
+
+Here is where the instrumentation is actually added, and the music is outputted as an .mp3 file and/or score. 
+
+The choice of 12/8 time signature means that each measure is 1 year (12 months), with 4 beats felt per measure representing the four seasons, where each month is part of a seasonal triplet. 
+
+```{r}
+#| label: music
+music_all <- Music() + Meter(12, 8) + 
+  line_max + line_avg +  line_min + line_max_new_seas + line_min_new_seas + 
+     Instrument(9, 1) +  ## monthly max, celesta
+     Instrument(42, 2)  + ## monthly average, viola
+     Instrument(71, 3) +  ## monthly min, bassoon
+     Instrument(42, 4) +  ## new high, viola
+     Instrument(42, 4) +  ## new low, viola
+  Tempo(120) 
+
+gm::show(music_all, to = c("audio", "score"))
+# gm::export(music_all, "music_sync.mscz")
+# gm::export(music_all, "music_sync.mp3")
+```

@@ -1,0 +1,359 @@
+[
+  {
+    "objectID": "data.html",
+    "href": "data.html",
+    "title": "Data Sourcing and Processing",
+    "section": "",
+    "text": "This file will detail the data source and pre-processing, as well as a missing data report, a summary statisics for whole series. For this stage of the project, we only use the tidyverse and lubridate packages.\nlibrary(tidyverse)\nsource(\"code/cummax_ignore_na.R\")\nsource(\"code/cummin_ignore_na.R\")",
+    "crumbs": [
+      "Data and Processing"
+    ]
+  },
+  {
+    "objectID": "data.html#data-source",
+    "href": "data.html#data-source",
+    "title": "Data Sourcing and Processing",
+    "section": "Data Source",
+    "text": "Data Source\nThree data sets were downloaded from the NOAA National Weather service NOWData tool.\nAll data sets are for Paso Robles, CA, from the start of data collection (“por”) to present (2025).\n\n\n\nNOAA NOW Data map tool visualizing location of data source in Paso Robles, CA\n\n\nWe requested the monthly maximums, monthly minimums, and monthly averages.\n After clicking “Go”, a data table pops up. We copied it and pasted into Microsoft Excel, removed the summary rows included at the bottom, then saved as a csv.\nThis process yielded 3 csv files: paso_max.csv, paso_min.csv, and paso_avg.csv.",
+    "crumbs": [
+      "Data and Processing"
+    ]
+  },
+  {
+    "objectID": "data.html#monthly-data",
+    "href": "data.html#monthly-data",
+    "title": "Data Sourcing and Processing",
+    "section": "Monthly data",
+    "text": "Monthly data\nRead in, combine, and process data from the csv files obtained above.\nThis gets us three monthly time series, which we can visualize.\n\ncols &lt;- c(\"max\" = \"red\", \"min\" = \"blue\", \"mean\"=\"grey\", \"Winter\" = \"#2f77c3\", \"Spring\" = \"#61bf9a\", \"Summer\" = \"#f94994\", \"Fall\" =  \"#eb9911\")\n\nmonthly_weather %&gt;% \n  ggplot(aes(x = date)) +\n  geom_line(aes(y = min, col = \"min\")) + \n  geom_line(aes(y = max, col = \"max\")) + \n  geom_line(aes(y = mean, col = \"mean\")) + \n  scale_color_manual(values = cols)\n\n\n\n\n\n\n\n\nSince there is a big gap in the data after the beginning of the series, we will start the sonification after that period.\n\nmonthly_weather &lt;- monthly_weather %&gt;% filter(year&gt;1909)\nmonthly_weather %&gt;% \n  ggplot(aes(x = date)) +\n  geom_line(aes(y = min, col = \"min\")) + \n  geom_line(aes(y = max, col = \"max\")) + \n  geom_line(aes(y = mean, col = \"mean\")) + \n  scale_color_manual(values = cols)\n\n\n\n\n\n\n\n\n\nSeasonal Data\nAlso, since the data is a bit noisy, let’s look at some seasonal summaries for each series as well.\n\nmonthly_weather &lt;- monthly_weather %&gt;% \n  mutate(\n    season = case_when(\n      month %in% c(\"Dec\", \"Jan\", \"Feb\") ~ \"Winter\",\n      month %in% c(\"Mar\", \"Apr\", \"May\")  ~ \"Spring\",\n      month %in% c(\"June\", \"July\", \"Aug\")  ~ \"Summer\",\n      month %in% c(\"Sept\", \"Oct\", \"Nov\") ~ \"Fall\"\n  ),\n  season_color = case_when(\n      month %in%  c(\"Dec\", \"Jan\", \"Feb\")  ~ \"#2f77c3\",\n      month %in% c(\"Mar\", \"Apr\", \"May\")  ~ \"#61bf9a\",\n      month %in% c(\"June\", \"July\", \"Aug\")  ~ \"#f94994\",\n      month %in% c(\"Sept\", \"Oct\", \"Nov\") ~ \"#eb9911\"\n  ), \n  season_year = case_when(\n      month == \"Dec\" ~ year + 1,  # December belongs to *next* Jan/Feb\n      .default = year\n  ),\n    season_label = paste(season, season_year)\n  ) %&gt;%   \n  group_by(season, year) %&gt;%\n  ungroup()  \n\n\nmonthly_weather &lt;- monthly_weather %&gt;%\n  group_by(season_label, season_year) %&gt;%\n  mutate(\n    xmin = min(date),\n    xmax = max(date),\n    seas_avg = mean(mean),\n    seas_max = max(max),\n    seas_min = min(min),\n    season_color = unique(season_color),\n    season = unique(season)\n  ) %&gt;%\n  ungroup()\n\nmonthly_weather \n\n# A tibble: 1,392 × 15\n    year month   min  mean   max date       season season_color season_year\n   &lt;int&gt; &lt;chr&gt; &lt;int&gt; &lt;dbl&gt; &lt;int&gt; &lt;date&gt;     &lt;chr&gt;  &lt;chr&gt;              &lt;dbl&gt;\n 1  1910 Jan      21  44.7    72 1910-01-01 Winter #2f77c3             1910\n 2  1910 Feb      18  48.2    75 1910-02-01 Winter #2f77c3             1910\n 3  1910 Mar      31  55.6    86 1910-03-01 Spring #61bf9a             1910\n 4  1910 Apr      35  59.3    99 1910-04-01 Spring #61bf9a             1910\n 5  1910 May      30  63.5   110 1910-05-01 Spring #61bf9a             1910\n 6  1910 June     34  65     105 1910-06-01 Summer #f94994             1910\n 7  1910 July     36  69.4   109 1910-07-01 Summer #f94994             1910\n 8  1910 Aug      36  67.6   106 1910-08-01 Summer #f94994             1910\n 9  1910 Sept     35  66.1   105 1910-09-01 Fall   #eb9911             1910\n10  1910 Oct      32  61.7   104 1910-10-01 Fall   #eb9911             1910\n# ℹ 1,382 more rows\n# ℹ 6 more variables: season_label &lt;chr&gt;, xmin &lt;date&gt;, xmax &lt;date&gt;,\n#   seas_avg &lt;dbl&gt;, seas_max &lt;int&gt;, seas_min &lt;int&gt;\n\n## visualize\n\nWe can visualize the seasonal data over the monthly data:\n\nggplot(monthly_weather %&gt;% filter(year &lt;1933), aes(x = date)) +\n  geom_line(aes(y = min, color = \"min\")) +\n  geom_line(aes(y = max, color = \"max\")) +\n  geom_line(aes(y = mean, color = \"mean\")) +\n    geom_rect( aes(xmin = xmin, xmax = xmax, \n                ymin = seas_avg-1, ymax = seas_avg+1,\n                fill = season), inherit.aes = FALSE) +\n    geom_rect(aes(xmin = xmin, xmax = xmax, \n                ymin = seas_max-1, ymax = seas_max+1,\n                fill = season), inherit.aes = FALSE) +\n    geom_rect(aes(xmin = xmin, xmax = xmax, \n                ymin = seas_min-1, ymax = seas_min+1,\n                fill = season), inherit.aes = FALSE) +\n  scale_color_manual(values = cols)\n\n\n\n\n\n\n\n\nor, on its own\n\nggplot(monthly_weather, aes(x = xmin)) +\n  geom_line(aes(y = seas_min, color = \"min\")) +\n  geom_point(aes(y = seas_min, color = season)) +\n  geom_line(aes(y = seas_max, color = \"max\")) +\n  geom_point(aes(y = seas_max, color = season)) +\n  geom_line(aes(y = seas_avg, color = \"mean\")) +\n  geom_point(aes(y = seas_avg, color = season)) +\n  scale_color_manual(values = cols) + \n  scale_x_date(labels = monthly_weather$season_year[monthly_weather$season == \"Winter\" & monthly_weather$season_year %%5 ==0], \n               breaks = monthly_weather$xmin[monthly_weather$season == \"Winter\"& monthly_weather$season_year %%5 ==0]) +\n  theme(axis.text.x = element_text(angle = 25))",
+    "crumbs": [
+      "Data and Processing"
+    ]
+  },
+  {
+    "objectID": "data.html#exceedances",
+    "href": "data.html#exceedances",
+    "title": "Data Sourcing and Processing",
+    "section": "Exceedances",
+    "text": "Exceedances\nWhen the seasonal max or min reaches a new high or low, indicate this with a true/false.\nWe can either set this to start from the beginning of the series, or start the “counter” at a certain time. Since we will have three parts to our music where the last part contains the most information (the last part).\n\nout &lt;- monthly_weather %&gt;%\ngroup_by(season) %&gt;%\narrange(date) %&gt;%\nmutate(\nstart_flag = year &gt; 1977,\ncummax = cummax_ignore_na(max, start_flag),\ncummin = cummin_ignore_na(min, start_flag),\nnew_max = cummax == max,\nnew_min = cummin == min\n) %&gt;%\nungroup()\n\nmonthly_weather$new_max &lt;- out$new_max\nmonthly_weather$new_min &lt;- out$new_min\n\n\nggplot(monthly_weather, aes(x = date)) +\n  geom_line(aes(y = min, color = \"min\")) +\n  geom_point(aes(y = min, color = season)) +\n  geom_line(aes(y = max, color = \"max\")) +\n  geom_point(aes(y = max, color = season)) +\n  geom_line(aes(y = mean, color = \"mean\")) +\n  geom_point(aes(y = mean, color = season)) +\n  geom_point(data = filter(monthly_weather, new_max),\n             aes(x = date, y = max, color = season), size = 6, shape = 17) +\n  geom_point(data = filter(monthly_weather, new_min),\n             aes(x = date, y = min, color = season), size = 6, shape = 15) +\n  scale_color_manual(values = cols) + \n  scale_x_date(labels = monthly_weather$season_year[monthly_weather$season == \"Winter\" & monthly_weather$season_year %%5 ==0], \n               breaks = monthly_weather$xmin[monthly_weather$season == \"Winter\"& monthly_weather$season_year %%5 ==0]) +\n  theme(axis.text.x = element_text(angle = 25))",
+    "crumbs": [
+      "Data and Processing"
+    ]
+  },
+  {
+    "objectID": "data.html#missing-data",
+    "href": "data.html#missing-data",
+    "title": "Data Sourcing and Processing",
+    "section": "Missing Data",
+    "text": "Missing Data",
+    "crumbs": [
+      "Data and Processing"
+    ]
+  },
+  {
+    "objectID": "data.html#summary-statistics",
+    "href": "data.html#summary-statistics",
+    "title": "Data Sourcing and Processing",
+    "section": "Summary statistics",
+    "text": "Summary statistics\n\nsave(monthly_weather, file = \"data/monthly_weather\")\n#save(seasonal_weather, file = \"data/seasonal_weather\")\n#save(seasonal_exceedances, file = \"data/seasonal_exceedances\")",
+    "crumbs": [
+      "Data and Processing"
+    ]
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Full Sonification",
+    "section": "",
+    "text": "Code\nlibrary(gm)\nlibrary(music)\nlibrary(tidyverse)\nlibrary(fpp3)\n\n## read in pre-processed data\nload(\"data/monthly_weather\")\nsource(\"code/data_to_soniof_all.R\")\n\n\nseasonal_only &lt;- monthly_weather %&gt;%\n  group_by(season_label) %&gt;%\n  summarise(seas_avg = unique(seas_avg),\n            year = unique(season_year), \n            season = unique(season)) %&gt;%\n  arrange(year, factor(season, levels = c(\"Winter\", \"Spring\", \"Summer\", \"Fall\")))",
+    "crumbs": [
+      "Full Sonification"
+    ]
+  },
+  {
+    "objectID": "index.html#part-1-just-averages",
+    "href": "index.html#part-1-just-averages",
+    "title": "Full Sonification",
+    "section": "Part 1: Just averages",
+    "text": "Part 1: Just averages\nThe averages are sonified to a two octave range by mapping the lowest value to the low pitch of the range and the high note. As specified further below, the average will be played by a viola.\n\n\nCode\n## sonify first and last parts separately\nsonif_all_mean = c(\n  data_to_sonif_all(monthly_weather$mean[1:(change_date_part_1-1)], low = 3, high = 4),\n  data_to_sonif_all(monthly_weather$mean[change_date_part_1:(change_date_part_2-1)], low = 3, high = 4),\n  data_to_sonif_all(monthly_weather$mean[change_date_part_2:nrow(monthly_weather)], low = 3, high = 4)\n  )                                   \nsonif_all_mean[change_date_part_1:(change_date_part_2-1)] &lt;- NA\n\n\npattern = rep(\"eighth\", times = length(sonif_all_mean))\n## lines for avg and max \nline_avg &lt;- Line(pitches = sonif_all_mean, durations = pattern, \n                 name = \"Monthly Average\")",
+    "crumbs": [
+      "Full Sonification"
+    ]
+  },
+  {
+    "objectID": "index.html#add-in-new-seasonal-max",
+    "href": "index.html#add-in-new-seasonal-max",
+    "title": "Full Sonification",
+    "section": "add in new seasonal max",
+    "text": "add in new seasonal max\nBut constrain to just the last part so the hits are hitting\n\n\nCode\nsonif_all_max = c(\n  data_to_sonif_all(monthly_weather$max[1:(change_date_part_1-1)], low = 3, high = 4),\n  data_to_sonif_all(monthly_weather$max[change_date_part_1:(change_date_part_2-1)], low = 3, high = 4),\n  data_to_sonif_all(monthly_weather$max[change_date_part_2:nrow(monthly_weather)], low = 3, high = 4)\n  )   \nsonif_all_max[1:change_date_part_2] &lt;- NA\npattern_seas &lt;- rep(\"quarter\", times = length(sonif_all_max))\n\nline_max_new_seas &lt;- Line(pitches = sonif_all_max, durations = pattern, name = \"New Seasonal Maximum Reached\")\n\nline_min_new &lt;- Line(pitches = monthly_weather$min_value, durations = pattern, name = \"New Minimum Reached\")",
+    "crumbs": [
+      "Full Sonification"
+    ]
+  },
+  {
+    "objectID": "index.html#add-in-seasonal-baseline-throughout-for-avg",
+    "href": "index.html#add-in-seasonal-baseline-throughout-for-avg",
+    "title": "Full Sonification",
+    "section": "Add in seasonal baseline throughout (for avg)",
+    "text": "Add in seasonal baseline throughout (for avg)\n\n\nCode\n## aggregate to seasonal level\n\n\nseas_bass_pitches &lt;- data_to_sonif_all(seasonal_only$seas_avg, low = 2, high = 2)\nseas_pattern &lt;- rep(\"quarter.\", times= nrow(seasonal_only))\n\nline_seas_bass &lt;- Line(pitches = seas_bass_pitches, durations = seas_pattern)",
+    "crumbs": [
+      "Full Sonification"
+    ]
+  },
+  {
+    "objectID": "index.html#make-the-music",
+    "href": "index.html#make-the-music",
+    "title": "Full Sonification",
+    "section": "make the music",
+    "text": "make the music\n\n\nCode\nmusic_all &lt;- Music() + Meter(12, 8) + \n  line_max + line_avg +  line_min + line_max_new_seas + line_seas_bass + \n     Instrument(9, 1) +  ## monthly max, celesta\n     Instrument(42, 2)  + ## monthly average, viola\n     Instrument(71, 3) +  ## monthly min, bassoon\n     Instrument(62, 4) +  ## new extreme, brass\n  Tempo(120) \n\ngm::show(music_all, to = c(\"audio\", \"score\"))\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nCode\ngm::export(music_all, \"music_sync.mscz\")\ngm::export(music_all, \"music_sync.mp3\")\n\n\nmusic_temp &lt;- Music() + Meter(12, 8) + \n   line_seas_bass + Tempo(120)",
+    "crumbs": [
+      "Full Sonification"
+    ]
+  },
+  {
+    "objectID": "snippets/min_max.html",
+    "href": "snippets/min_max.html",
+    "title": "min_max",
+    "section": "",
+    "text": "FIXME final video",
+    "crumbs": [
+      "Sonification Design",
+      "Mins and Maxes"
+    ]
+  },
+  {
+    "objectID": "snippets/min_max.html#video",
+    "href": "snippets/min_max.html#video",
+    "title": "min_max",
+    "section": "",
+    "text": "FIXME final video",
+    "crumbs": [
+      "Sonification Design",
+      "Mins and Maxes"
+    ]
+  },
+  {
+    "objectID": "snippets/min_max.html#data",
+    "href": "snippets/min_max.html#data",
+    "title": "min_max",
+    "section": "Data",
+    "text": "Data\n\nCode\nFIXME processing code\n\n\nVisualization\nFIXME visualization code",
+    "crumbs": [
+      "Sonification Design",
+      "Mins and Maxes"
+    ]
+  },
+  {
+    "objectID": "snippets/min_max.html#sonification-design",
+    "href": "snippets/min_max.html#sonification-design",
+    "title": "min_max",
+    "section": "Sonification Design",
+    "text": "Sonification Design\n\nCode\nFIXME sonification code\n\n\nSnippet\nFIXME play snippet of a few years",
+    "crumbs": [
+      "Sonification Design",
+      "Mins and Maxes"
+    ]
+  },
+  {
+    "objectID": "snippets/min_max.html#video-generation-process",
+    "href": "snippets/min_max.html#video-generation-process",
+    "title": "min_max",
+    "section": "Video generation process",
+    "text": "Video generation process\nFIXME algorithm for video generation",
+    "crumbs": [
+      "Sonification Design",
+      "Mins and Maxes"
+    ]
+  },
+  {
+    "objectID": "snippets/everything.html",
+    "href": "snippets/everything.html",
+    "title": "everything",
+    "section": "",
+    "text": "FIXME final video",
+    "crumbs": [
+      "Sonification Design",
+      "Everything and Exceedances"
+    ]
+  },
+  {
+    "objectID": "snippets/everything.html#video",
+    "href": "snippets/everything.html#video",
+    "title": "everything",
+    "section": "",
+    "text": "FIXME final video",
+    "crumbs": [
+      "Sonification Design",
+      "Everything and Exceedances"
+    ]
+  },
+  {
+    "objectID": "snippets/everything.html#data",
+    "href": "snippets/everything.html#data",
+    "title": "everything",
+    "section": "Data",
+    "text": "Data\n\nCode\nFIXME processing code\n\n\nVisualization\nFIXME visualization code",
+    "crumbs": [
+      "Sonification Design",
+      "Everything and Exceedances"
+    ]
+  },
+  {
+    "objectID": "snippets/everything.html#sonification-design",
+    "href": "snippets/everything.html#sonification-design",
+    "title": "everything",
+    "section": "Sonification Design",
+    "text": "Sonification Design\nFIXME exceedances\n\nCode\nFIXME sonification code\n\n\nSnippet\nFIXME play snippet of a few years",
+    "crumbs": [
+      "Sonification Design",
+      "Everything and Exceedances"
+    ]
+  },
+  {
+    "objectID": "snippets/everything.html#video-generation-process",
+    "href": "snippets/everything.html#video-generation-process",
+    "title": "everything",
+    "section": "Video generation process",
+    "text": "Video generation process\nFIXME algorithm for video generation",
+    "crumbs": [
+      "Sonification Design",
+      "Everything and Exceedances"
+    ]
+  },
+  {
+    "objectID": "snippets/averages.html",
+    "href": "snippets/averages.html",
+    "title": "averages",
+    "section": "",
+    "text": "FIXME final video",
+    "crumbs": [
+      "Sonification Design",
+      "Averages"
+    ]
+  },
+  {
+    "objectID": "snippets/averages.html#video",
+    "href": "snippets/averages.html#video",
+    "title": "averages",
+    "section": "",
+    "text": "FIXME final video",
+    "crumbs": [
+      "Sonification Design",
+      "Averages"
+    ]
+  },
+  {
+    "objectID": "snippets/averages.html#data",
+    "href": "snippets/averages.html#data",
+    "title": "averages",
+    "section": "Data",
+    "text": "Data\nFirst, load packages and read in the data from the FIXME data processing.\n\nlibrary(tidyverse)\nlibrary(gm)\nlibrary(music)\nload(\"../data/monthly_weather\")\nsource(\"../code/data_to_soniof_all.R\")\n\n\nCode\n\n## create smaller subset of 5 years for testing\ntest_data &lt;- monthly_weather %&gt;% filter(between(year, 1910, 1915))\n\n\nMonthly Data\n\n12/8\n\ndurations = rep(\"eighth\", times = nrow(test_data))\npitches = data_to_sonif_all(test_data$mean, low = 3, high = 4)\n\nline_avg &lt;- Line(pitches = pitches, durations = durations, \n                 name = \"Monthly Average\")\n\nmusic_12_8 &lt;- Music() + Meter(12, 8) + \n     line_avg + \n     Instrument(42, 1) +  \n  Tempo(120) \n\ngm::show(music_12_8, to = c(\"score\", \"audio\"))\n\n\n\n\n\n\n\n\n\n\n\n\ngm::export(music_12_8, \"12_8.mscz\")\n\n\n\n8/8\n\ndurations = pattern = rep(c(rep(rep(\"quarter/3\", times = 3), times = 4)), \n              times = nrow(test_data)/12)\npitches = data_to_sonif_all(test_data$mean, low = 3, high = 4)\n\nline_avg &lt;- Line(pitches = pitches, durations = durations, \n                 name = \"Monthly Average\")\n\nmusic_8_8 &lt;- Music() + Meter(8, 8) + \n     line_avg + \n     Instrument(42, 1) +  \n  Tempo(120) \n\ngm::show(music_8_8, to = c(\"score\", \"audio\"))\n\n\n\n\n\n\n\n\n\n\n\n\n#gm::export(music_8_8, \"8_8.mscz\")\n\n\n\n\nSeasonal Data\n\nseasonal &lt;- test_data %&gt;% group_by(season) %&gt;%\n  summarise(seas_avg = mean(mean))\n\n\n\nYearly Data\nFIXME processing code\n\n\n\nVisualization\nFIXME visualization code",
+    "crumbs": [
+      "Sonification Design",
+      "Averages"
+    ]
+  },
+  {
+    "objectID": "snippets/averages.html#sonification-design",
+    "href": "snippets/averages.html#sonification-design",
+    "title": "averages",
+    "section": "Sonification Design",
+    "text": "Sonification Design\nFIXME why start with averages\n\nCode\nFIXME sonification code\n\n\nSnippet\nFIXME play snippet of a few years",
+    "crumbs": [
+      "Sonification Design",
+      "Averages"
+    ]
+  },
+  {
+    "objectID": "snippets/averages.html#video-generation-process",
+    "href": "snippets/averages.html#video-generation-process",
+    "title": "averages",
+    "section": "Video generation process",
+    "text": "Video generation process\nFIXME algorithm for video generation",
+    "crumbs": [
+      "Sonification Design",
+      "Averages"
+    ]
+  },
+  {
+    "objectID": "video/videos.html",
+    "href": "video/videos.html",
+    "title": "videos",
+    "section": "",
+    "text": "We need to generate each individual frame of the video. I want to mimic the Musescore format of a vertical line going through the music. Except instead of notes on a staff we will have points on a plot.\n\n\nTo prototype, we’ll start by showing a frame every beat, which is one frame per season and four frames per year. We’ll start with 5 years.\n\nlibrary(tidyverse)\nload(\"../data/monthly_weather\")\nmin(monthly_weather$year)\n\n# Nest by year first\nseasonal_plots &lt;- monthly_weather %&gt;%\n  mutate(season = factor(season, levels = c(\"Winter\", \"Spring\", \"Summer\", \"Fall\"))) %&gt;%\n  filter(year &lt;= 1915) %&gt;%\n  group_nest(year, keep = TRUE) %&gt;%\n  tibble::deframe() %&gt;%\n  purrr::map(function(df_year) {\n    df_year %&gt;%\n      group_nest(season, keep = TRUE) %&gt;%\n      tibble::deframe() %&gt;%\n      purrr::map(function(df_season) {\n  season_name &lt;- unique(df_season$season)\n  xline &lt;- df_year %&gt;%\n  filter(season == season_name) %&gt;%\n  pull(xmin)\n\n# Take the first non-NA value safely\nxline &lt;- xline[!is.na(xline)]\nxline &lt;- if (length(xline) &gt; 0) xline[1] else NA\n\n  ggplot(df_year, aes(x = date)) +\n    geom_line(aes(y = min, color = \"min\")) +\n    geom_line(aes(y = max, color = \"max\")) +\n    geom_line(aes(y = mean, color = \"mean\")) +\n    geom_rect(aes(xmin = xmin, xmax = xmax, \n                  ymin = seas_avg - 1, ymax = seas_avg + 1,\n                  fill = season), inherit.aes = FALSE, alpha = 0.2) +\n    geom_rect(aes(xmin = xmin, xmax = xmax, \n                  ymin = seas_max - 1, ymax = seas_max + 1,\n                  fill = season), inherit.aes = FALSE, alpha = 0.2) +\n    geom_rect(aes(xmin = xmin, xmax = xmax, \n                  ymin = seas_min - 1, ymax = seas_min + 1,\n                  fill = season), inherit.aes = FALSE, alpha = 0.2) +\n    geom_vline(xintercept = as.numeric(xline), linetype = \"dashed\", color = \"black\") +\n    scale_color_manual(values = cols) +\n    theme_minimal()\n})\n})\n\n\n\nlibrary(fs)\n\n# Make sure your plots are ordered as (1910 Winter), (1910 Spring), (1910 Summer), (1910 Fall), (1911 Winter), ...\n# You can flatten and give names:\nflat_frames &lt;- imap_dfr(seasonal_plots, function(year_data, yr) {\n  imap_dfr(year_data, function(plot, season) {\n    tibble(\n      year = as.integer(yr),\n      season = season,\n      plot = list(plot)\n    )\n  })\n}) %&gt;%\n  mutate(season = factor(season, levels = c(\"Winter\", \"Spring\", \"Summer\", \"Fall\"))) %&gt;%\n  arrange(year, season) %&gt;%\n  mutate(frame_index = row_number())  # 1 frame per season\n\n\n#dir_create(\"frames\")\n\n\n# Write 15 frames per plot\n\npwalk(\n  .l = list(plot = flat_frames$plot, frame_index = flat_frames$frame_index),\n  .f = function(plot, frame_index) {\n    file_name &lt;- sprintf(\"frames/frame_%04d.png\", frame_index)\n    ggsave(filename = file_name, plot = plot, width = 8, height = 6, dpi = 300)\n  }\n)\n\n\nffmpeg -framerate 2 -i frames/frame_%04d.png -i frames/music_sub.mp3 \\\n  -shortest -c:v libx264 -pix_fmt yuv420p -c:a aac final_video.mp4",
+    "crumbs": [
+      "Video Generation",
+      "videos"
+    ]
+  },
+  {
+    "objectID": "video/videos.html#images",
+    "href": "video/videos.html#images",
+    "title": "videos",
+    "section": "",
+    "text": "We need to generate each individual frame of the video. I want to mimic the Musescore format of a vertical line going through the music. Except instead of notes on a staff we will have points on a plot.\n\n\nTo prototype, we’ll start by showing a frame every beat, which is one frame per season and four frames per year. We’ll start with 5 years.\n\nlibrary(tidyverse)\nload(\"../data/monthly_weather\")\nmin(monthly_weather$year)\n\n# Nest by year first\nseasonal_plots &lt;- monthly_weather %&gt;%\n  mutate(season = factor(season, levels = c(\"Winter\", \"Spring\", \"Summer\", \"Fall\"))) %&gt;%\n  filter(year &lt;= 1915) %&gt;%\n  group_nest(year, keep = TRUE) %&gt;%\n  tibble::deframe() %&gt;%\n  purrr::map(function(df_year) {\n    df_year %&gt;%\n      group_nest(season, keep = TRUE) %&gt;%\n      tibble::deframe() %&gt;%\n      purrr::map(function(df_season) {\n  season_name &lt;- unique(df_season$season)\n  xline &lt;- df_year %&gt;%\n  filter(season == season_name) %&gt;%\n  pull(xmin)\n\n# Take the first non-NA value safely\nxline &lt;- xline[!is.na(xline)]\nxline &lt;- if (length(xline) &gt; 0) xline[1] else NA\n\n  ggplot(df_year, aes(x = date)) +\n    geom_line(aes(y = min, color = \"min\")) +\n    geom_line(aes(y = max, color = \"max\")) +\n    geom_line(aes(y = mean, color = \"mean\")) +\n    geom_rect(aes(xmin = xmin, xmax = xmax, \n                  ymin = seas_avg - 1, ymax = seas_avg + 1,\n                  fill = season), inherit.aes = FALSE, alpha = 0.2) +\n    geom_rect(aes(xmin = xmin, xmax = xmax, \n                  ymin = seas_max - 1, ymax = seas_max + 1,\n                  fill = season), inherit.aes = FALSE, alpha = 0.2) +\n    geom_rect(aes(xmin = xmin, xmax = xmax, \n                  ymin = seas_min - 1, ymax = seas_min + 1,\n                  fill = season), inherit.aes = FALSE, alpha = 0.2) +\n    geom_vline(xintercept = as.numeric(xline), linetype = \"dashed\", color = \"black\") +\n    scale_color_manual(values = cols) +\n    theme_minimal()\n})\n})\n\n\n\nlibrary(fs)\n\n# Make sure your plots are ordered as (1910 Winter), (1910 Spring), (1910 Summer), (1910 Fall), (1911 Winter), ...\n# You can flatten and give names:\nflat_frames &lt;- imap_dfr(seasonal_plots, function(year_data, yr) {\n  imap_dfr(year_data, function(plot, season) {\n    tibble(\n      year = as.integer(yr),\n      season = season,\n      plot = list(plot)\n    )\n  })\n}) %&gt;%\n  mutate(season = factor(season, levels = c(\"Winter\", \"Spring\", \"Summer\", \"Fall\"))) %&gt;%\n  arrange(year, season) %&gt;%\n  mutate(frame_index = row_number())  # 1 frame per season\n\n\n#dir_create(\"frames\")\n\n\n# Write 15 frames per plot\n\npwalk(\n  .l = list(plot = flat_frames$plot, frame_index = flat_frames$frame_index),\n  .f = function(plot, frame_index) {\n    file_name &lt;- sprintf(\"frames/frame_%04d.png\", frame_index)\n    ggsave(filename = file_name, plot = plot, width = 8, height = 6, dpi = 300)\n  }\n)\n\n\nffmpeg -framerate 2 -i frames/frame_%04d.png -i frames/music_sub.mp3 \\\n  -shortest -c:v libx264 -pix_fmt yuv420p -c:a aac final_video.mp4",
+    "crumbs": [
+      "Video Generation",
+      "videos"
+    ]
+  },
+  {
+    "objectID": "about.html",
+    "href": "about.html",
+    "title": "About Us",
+    "section": "",
+    "text": "This sonification was joint work among Dr. Julia Schedler, Donya Behroozi, Josh Schneider, and Dr. Sinem Demirci.\n\nDr. Julia Schedler is Assistant Professor in the Statistics Department in the Bailey College of Science and Mathematics at Cal Poly SLO. Besides sonification, Dr. Schedler works on time series modeling and spatial modeling and visualization.\nDonya Behroozi FIXME\nDr. Sinem Demirci FIXME\n\nAdditionally, we are incredibly grateful to the feedback from our C3RC collaborations, Dr. Jeanine Scaramozzino, Dr. Aaron Liggett, and Annica Wu.\nFurther information is available on the C3RC Webpage.\nAdditional gratitude to everyone on the math department side of the 2nd floor of faculty offices east, especially Dr. Charlotte Mann and Dr. Ulric Lund, for listening to drafts of the sonifications.",
+    "crumbs": [
+      "About Us"
+    ]
+  },
+  {
+    "objectID": "index.html#splitting-into-parts",
+    "href": "index.html#splitting-into-parts",
+    "title": "Full Sonification",
+    "section": "Splitting into parts",
+    "text": "Splitting into parts\nAfter a brief conversation with the choreographer, Josh Schneider, it was determined that having all three series (maximum, minimum, average) at once was a bit much for the full history of the data set. As an homage to our shared passion for musical theatre, we settled on a “three act” (three part) structure. As such, we need some cut points for the sonification. The first is when the all time high temperature for the entire history of Paso Robles was hit:\n\n\nCode\n## New high for Paso Robles\nchange_date_part_1 &lt;- which.max(monthly_weather$max);\nmonthly_weather[change_date_part_1,c(\"date\", \"max\", \"min\")]\n\n\n# A tibble: 1 × 3\n  date         max   min\n  &lt;date&gt;     &lt;int&gt; &lt;int&gt;\n1 1933-08-01   117    43\n\n\nAuditorially, we represent this change by splitting from only tracking the average to tracking both the maximum and the minimum.\nFor the second part, the year that climate scientists began building models predicting the increasing temperatures we have seen on a global scale, 1977. Auditorially, we represent this as adding back in the average, but also tracking every time a new seasonal extreme is reached, where we start the clock at 1977.\n\n\nCode\n## 1977 the year exxon scientists knew about climate change (allegedly)\nchange_date_part_2 &lt;- min(which(monthly_weather$year == 1977))\nmonthly_weather[change_date_part_2,]\n\n\n# A tibble: 1 × 17\n   year month   min  mean   max date       season season_color season_year\n  &lt;int&gt; &lt;chr&gt; &lt;int&gt; &lt;dbl&gt; &lt;int&gt; &lt;date&gt;     &lt;chr&gt;  &lt;chr&gt;              &lt;dbl&gt;\n1  1977 Jan      23  46.6    70 1977-01-01 Winter #2f77c3             1977\n# ℹ 8 more variables: season_label &lt;chr&gt;, xmin &lt;date&gt;, xmax &lt;date&gt;,\n#   seas_avg &lt;dbl&gt;, seas_max &lt;int&gt;, seas_min &lt;int&gt;, new_max &lt;lgl&gt;,\n#   new_min &lt;lgl&gt;",
+    "crumbs": [
+      "Full Sonification"
+    ]
+  },
+  {
+    "objectID": "index.html#sonification-method",
+    "href": "index.html#sonification-method",
+    "title": "Full Sonification",
+    "section": "Sonification method",
+    "text": "Sonification method\nSonifcations are generated via the custom function data_to_sonif(), which maps the largest value in the data set to a pre-specified low note, and the highest value to a pre-specified low note, then maps values in between maintaining the spacing between points rounded to the 12 tone equal tempered scale. For example, see how we sonify the five number summary to one octave:\n\n\n\nVisualization of the pitch mapping sonification method.",
+    "crumbs": [
+      "Full Sonification"
+    ]
+  },
+  {
+    "objectID": "index.html#part-2-highs-and-lows",
+    "href": "index.html#part-2-highs-and-lows",
+    "title": "Full Sonification",
+    "section": "Part 2: Highs and Lows",
+    "text": "Part 2: Highs and Lows\nThe variability of the monthly maximum temperatures is slightly higher than that of the monthly minimum (Range of max: {r}diff(range(monthly_weather$max, na.rm = T)), Range of min:{r}diff(range(monthly_weather$min, na.rm = T)); Standard deviation of max: 13.21, 8.54 ). To represent this difference auditorially, we allow the maximum to span 3 octaves (C5 to C8) and the minumum to span 2 octaves (C3 to C5). Note that the minimum has the same octave span as the mean, which has a range of {r}round(diff(range(monthly_weather$mean, na.rm = T)), 2) and a standard deviation of 9.21.\nAs defined below, the maximum is played by a celesta (a keyboard instrument) and the minimum is played by a bassoon.\n\n\nCode\nsonif_all_max = c(\n  data_to_sonif_all(monthly_weather$max[1:(change_date_part_1-1)], low = 5, high = 7),\n  data_to_sonif_all(monthly_weather$max[change_date_part_1:(change_date_part_2-1)], low = 5, high = 7),\n  data_to_sonif_all(monthly_weather$max[change_date_part_2:nrow(monthly_weather)], low = 5, high = 7)\n  )   \nsonif_all_max[1:change_date_part_1] &lt;- NA\n\nline_max &lt;- Line(pitches = sonif_all_max, durations = pattern, \n                 name = \"Monthly Max of Daily Maximum\")\n\nsonif_all_min = c(\n  data_to_sonif_all(monthly_weather$min[1:(change_date_part_1-1)], low = 3, high = 4),\n  data_to_sonif_all(monthly_weather$min[change_date_part_1:(change_date_part_2-1)], low = 3, high = 4),\n  data_to_sonif_all(monthly_weather$min[change_date_part_2:nrow(monthly_weather)], low = 3, high = 4)\n  )   \nsonif_all_min[1:change_date_part_1] &lt;- NA\n\nline_min &lt;- Line(pitches = sonif_all_min, durations = pattern, \n                 name = \"Monthly Min of Daily Minimum\")",
+    "crumbs": [
+      "Full Sonification"
+    ]
+  },
+  {
+    "objectID": "index.html#part-3-exceedances",
+    "href": "index.html#part-3-exceedances",
+    "title": "Full Sonification",
+    "section": "Part 3: Exceedances",
+    "text": "Part 3: Exceedances\nWhile it is an issue that temperatures on average are increasing, it is not audible on the scales played here since the change is very slow over time. However, the average is not the only statistic available to us, and in times of change we don’t necessarily want an estimate of just “typical” values.\nOne important tool for understanding how the extremes of a time series are changing over time are exceedance occurrances: tracking when a new high or a new low is hit.\nIf we just tracked new all time highs and lows, we would essentially only capture the worst winter/summer. Instead, we start the tracker at 1977 for reasons mentioned above,and track each season (Winter, Spring, Summer, Fall) so we see a sudden influx of “new” maximums and minumums as we begin the tracking, but then once we initialize we can then track when unusually high or low values occurr. I set the pitches at middle C for both to avoid the sonification becoming too busy.\nAs defined later, the exceedances occurrances are played with a viola to elevate the importance of exceedance occurrances as a statistic along with the average, which is also played by the viola.\n\n\nCode\nsonif_all_new_max = rep(NA, times = length(sonif_all_mean))\nsonif_all_new_max[monthly_weather$new_max] &lt;- \"C4\"\nsonif_all_new_min = rep(NA, times = length(sonif_all_mean))\nsonif_all_new_min[monthly_weather$new_max] &lt;- \"C4\"\n\npattern_seas &lt;- rep(\"quarter\", times = length(sonif_all_max))\n\nline_max_new_seas &lt;- Line(pitches = sonif_all_new_max, durations = pattern, name = \"New Seasonal Maximum Reached\")\n\nline_min_new_seas &lt;- Line(pitches = sonif_all_new_max, durations = pattern, name = \"New Seasonal Minimum Reached\")",
+    "crumbs": [
+      "Full Sonification"
+    ]
+  },
+  {
+    "objectID": "index.html#create-the-music",
+    "href": "index.html#create-the-music",
+    "title": "Full Sonification",
+    "section": "Create the music!",
+    "text": "Create the music!\nHere is where the instrumentation is actually added, and the music is outputted as an .mp3 file and/or score.\nThe choice of 12/8 time signature means that each measure is 1 year (12 months), with 4 beats felt per measure representing the four seasons, where each month is part of a seasonal triplet.\n\n\nCode\nmusic_all &lt;- Music() + Meter(12, 8) + \n  line_max + line_avg +  line_min + line_max_new_seas + line_min_new_seas + \n     Instrument(9, 1) +  ## monthly max, celesta\n     Instrument(42, 2)  + ## monthly average, viola\n     Instrument(71, 3) +  ## monthly min, bassoon\n     Instrument(42, 4) +  ## new high, viola\n     Instrument(42, 4) +  ## new low, viola\n  Tempo(120) \n\ngm::show(music_all, to = c(\"audio\", \"score\"))\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nCode\n# gm::export(music_all, \"music_sync.mscz\")\n# gm::export(music_all, \"music_sync.mp3\")",
+    "crumbs": [
+      "Full Sonification"
+    ]
+  }
+]
