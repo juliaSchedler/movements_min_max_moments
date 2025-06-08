@@ -2,18 +2,26 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://juliaSchedler.github.io/movements_min_max_moments/data.html</loc>
-    <lastmod>2025-06-06T22:42:23.100Z</lastmod>
+    <lastmod>2025-06-08T23:25:02.132Z</lastmod>
   </url>
   <url>
-    <loc>https://juliaSchedler.github.io/movements_min_max_moments/about.html</loc>
-    <lastmod>2025-06-06T22:41:29.269Z</lastmod>
+    <loc>https://juliaSchedler.github.io/movements_min_max_moments/SonifDesign.html</loc>
+    <lastmod>2025-06-06T22:35:56.534Z</lastmod>
   </url>
   <url>
     <loc>https://juliaSchedler.github.io/movements_min_max_moments/index.html</loc>
     <lastmod>2025-06-06T22:19:48.427Z</lastmod>
   </url>
   <url>
-    <loc>https://juliaSchedler.github.io/movements_min_max_moments/SonifDesign.html</loc>
-    <lastmod>2025-06-06T22:35:56.534Z</lastmod>
+    <loc>https://juliaSchedler.github.io/movements_min_max_moments/data_backup.html</loc>
+    <lastmod>2025-06-08T22:40:38.862Z</lastmod>
+  </url>
+  <url>
+    <loc>https://juliaSchedler.github.io/movements_min_max_moments/about.html</loc>
+    <lastmod>2025-06-06T22:41:29.269Z</lastmod>
+  </url>
+  <url>
+    <loc>https://juliaSchedler.github.io/movements_min_max_moments/test.html</loc>
+    <lastmod>2025-06-08T22:38:05.667Z</lastmod>
   </url>
 </urlset>
