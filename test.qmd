@@ -1,0 +1,44 @@
+---
+title: "test"
+format: html
+---
+
+::: {.callout-note collapse="true"}
+## All Time
+  ::: {.callout-note collapse="true}
+  :::
+  ::: {.callout-note collapse="true}
+  :::
+:::
+
+
+## Monthly Summaries
+
+## Seasonal Summaries
+
+::: {.callout-note collapse="true"}
+## Yearly summaries
+:::
+
+::: {.callout collapse="true}
+## Means and SDs
+
+::: {.callout-note collapse="true"}
+## All Time
+  ::: {.callout-note collapse="true}
+  :::
+  ::: {.callout-note collapse="true}
+  :::
+:::
+
+:::
+
+
+## Monthly Summaries
+
+## Seasonal Summaries
+
+::: {.callout-note collapse="true"}
+## Yearly summaries
+:::
+:::
