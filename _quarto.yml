@@ -7,10 +7,12 @@ website:
     style: "docked"
     contents:
       - href: index.qmd
-        text: Sonified Animation
-      - href: data.qmd
-        text: Data and Processing
-      # - section: "Sonification Design"
+        text: "Sonified Animation"
+        section: "Sonification"
+        contents:
+             - href: data.qmd
+               text: Data and Processing
+      # - section:
       #   contents:
       #     - href: snippets/averages.qmd
       #       text: Averages 
@@ -18,10 +20,16 @@ website:
       #       text: Mins and Maxes
       #     - href: snippets/everything.qmd
       #       text: Everything and Exceedances
-      - href: SonifDesign.qmd
-        text: Design
+             - href: SonifDesign.qmd
+               text: Design
+      - href: News.qmd
+        text: "News Stories"
       - href: about.qmd
         text: "About Us"
+    tools:
+      - icon: github # Use the GitHub icon
+        href: https://github.com/YOUR_GITHUB_USERNAME/YOUR_REPOSITORY_NAME # Replace with your GitHub repository URL
+
 
 format:
   html:

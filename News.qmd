@@ -1,0 +1,12 @@
+---
+title: "News Stories"
+format: html
+---
+
+We made the KSBY (Central Coast local) News!
+
+[Cal Poly dancers bring climate data to life](https://www.ksby.com/san-luis-obispo/cal-poly-dancers-bring-climate-data-to-life)
+
+
+
+{{< video https://www.youtube.com/watch?v=9uY73d2VRT4>}}

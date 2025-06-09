@@ -5,6 +5,7 @@ format:
     code-fold: true
 execute: 
   freeze: auto # re-render only when source changes.
+  warning: false
 ---
 
 For monthly temperature data, this file shows:
@@ -214,7 +215,7 @@ We will visually (plots) and numerically (tables) examine the following statisti
   - mean of monthly means
   - max of monthly maxxes
 
-## All Time Summary Statistics
+### All Time Summary Statistics
 For the full history January 1900- May 2025.
 
 :::{.panel-tabset}
@@ -225,21 +226,21 @@ For the full history January 1900- May 2025.
 summary_table_all <- monthly_weather %>% 
   summarise(
     ## mean 
-    Min_mean = mean(min, na.rm = T), 
-    Mean_mean = mean(mean, na.rm = T), 
-    Max_mean = mean(max, na.rm = T), 
+    mean_Min = mean(min, na.rm = T), 
+    mean_Mean = mean(mean, na.rm = T), 
+    mean_Max = mean(max, na.rm = T), 
     ## sd
-    Min_sd = sd(min, na.rm = T),
-    Mean_sd = sd(mean, na.rm = T),
-    Max_sd = sd(max, na.rm = T),
+    sd_Min= sd(min, na.rm = T),
+    sd_Mean = sd(mean, na.rm = T),
+    sd_Max = sd(max, na.rm = T),
     ## max 
-    Min_max = max(min, na.rm = T),
-    Mean_max = max(mean, na.rm = T),
-    Max_max = max(max, na.rm = T),
+    max_Min = max(min, na.rm = T),
+    max_Mean = max(mean, na.rm = T),
+    max_Max = max(max, na.rm = T),
     ## min
-    Min_min = min(min, na.rm = T),
-    Mean_min = min(mean, na.rm = T),
-    Max_min = min(max, na.rm = T),
+    min_Min = min(min, na.rm = T),
+    min_Mean = min(mean, na.rm = T),
+    min_Max = min(max, na.rm = T),
   )
 
 ## chat help
@@ -248,7 +249,7 @@ facet_vars <- c("min", "mean", "max")
 
 # Step 1: Pivot your summary table
 vline_data <- summary_table_all %>%
-  pivot_longer(cols = contains(c("Min_mean", "Mean_mean", "Max_mean")),
+  pivot_longer(cols = contains(c("Min_min", "Mean_mean", "Max_max")),
                names_to = "name", values_to = "xintercept") 
 vline_data$name = facet_vars
 
@@ -264,11 +265,17 @@ monthly_weather %>%
   geom_vline(
     data = vline_data,
     aes(xintercept = xintercept),
-    color = "white", linewidth = 1, linetype = "dashed"
+    color = "black", linewidth = 2, linetype = "solid"
+  ) +
+  geom_vline(
+    data = vline_data,
+    aes(xintercept = xintercept, color = name),
+    linewidth = 1, linetype = "solid"
   ) +
   facet_grid(name~., scales = "fixed") +
   theme_minimal() +
-  scale_fill_manual(values = plot_cols)
+  scale_fill_manual(values = plot_cols)+
+  scale_color_manual(values = plot_cols)
 
 ```
 ## Boxplots
@@ -281,7 +288,7 @@ facet_vars <- c("min", "mean", "max")
 
 # Step 1: Pivot your summary table
 vline_data <- summary_table_all %>%
-  pivot_longer(cols = contains(c("Min_mean", "Mean_mean", "Max_mean")),
+  pivot_longer(cols = contains(c("min_Min", "Mean_mean", "Max_max")),
                names_to = "name", values_to = "xintercept") 
 vline_data$name = facet_vars
 
@@ -294,20 +301,27 @@ monthly_weather %>%
   select(year, month, date, season, name, value) %>%
   ggplot(aes(x = value, fill = name)) +
   geom_boxplot() +
-  geom_vline(
+    geom_vline(
     data = vline_data,
     aes(xintercept = xintercept),
-    color = "white", linewidth = 1, linetype = "dashed"
+    color = "black", linewidth = 2, linetype = "solid"
+  ) +
+  geom_vline(
+    data = vline_data,
+    aes(xintercept = xintercept, color = name),
+    linewidth = 1, linetype = "solid"
   ) +
   facet_grid(name~., scales = "fixed") +
   theme_minimal() +
-  scale_fill_manual(values = plot_cols)
+  scale_fill_manual(values = plot_cols)+
+  scale_color_manual(values = plot_cols)
 
 ```
 ## Table
 ```{r}
 #| label: all-time-table
 summary_table_all %>%
+select(-c(max_Min, min_Max, min_Mean, max_Mean))%>%
 gt() %>%
   tab_header(
     title = "All-time Summaries"
@@ -317,29 +331,31 @@ gt() %>%
     decimals = 2
   )%>%
   cols_label(
-    Min_mean = "Mean", 
-    Min_sd = "SD", 
-    Mean_mean = "Mean", 
-    Mean_sd = "SD", 
-    Max_mean = "Mean",
-    Max_sd = "SD"
+    min_Min = "Min", 
+    mean_Min = "Mean",
+    sd_Min = "SD", 
+    mean_Mean = "Mean", 
+    sd_Mean = "SD", 
+    max_Max = "Max",
+    mean_Max = "Mean",
+    sd_Max= "SD"
   ) %>%
   tab_spanner(
     label = "Monthly Minimums",
-    columns = c(Min_mean, Min_sd)
+    columns = c(min_Min, mean_Min, sd_Min)
   ) %>%
   tab_spanner(
     label = "Monthly Means",
-    columns = c(Mean_mean, Mean_sd)
+    columns = c(mean_Mean, sd_Mean)
   ) %>%
   tab_spanner(
     label = "Monthly Maximums",
-    columns = c(Max_mean, Max_sd)
+    columns = c(mean_Max, sd_Max, max_Max)
 )
 ```
 :::
 
-## Monthly Level Summaries
+### Monthly Level Summaries
 
 :::{.panel-tabset}
 ###### Plot (aggregated)
@@ -350,26 +366,36 @@ month.abb = c("Dec", "Jan", "Feb", "Mar", "Apr", "May" , "June", "July", "Aug", 
 summary_table <- monthly_weather %>% 
   mutate(month = factor(month, levels = month.abb)) %>%
   group_by(month) %>%
-  summarise(
-    Min_mean = mean(min, na.rm = T), 
-    Min_sd = sd(min, na.rm = T),
-    Mean_mean = mean(mean, na.rm = T), 
-    Mean_sd = sd(mean, na.rm = T),
-    Max_mean = mean(max, na.rm = T), 
-    Max_sd = sd(max, na.rm = T)
-  ) %>%
+   summarise(
+    ## mean 
+    mean_Min = mean(min, na.rm = T), 
+    mean_Mean = mean(mean, na.rm = T), 
+    mean_Max = mean(max, na.rm = T), 
+    ## sd
+    sd_Min= sd(min, na.rm = T),
+    sd_Mean = sd(mean, na.rm = T),
+    sd_Max = sd(max, na.rm = T),
+    ## max 
+    max_Min = max(min, na.rm = T),
+    max_Mean = max(mean, na.rm = T),
+    max_Max = max(max, na.rm = T),
+    ## min
+    min_Min = min(min, na.rm = T),
+    min_Mean = min(mean, na.rm = T),
+    min_Max = min(max, na.rm = T),
+  )%>%
   arrange(month)
 
-plot_cols <- c(plot_cols, "Min_mean" = "blue", "Mean_mean" = "grey", "Max_mean" = "red")
+plot_cols <- c(plot_cols, "min_Min" = "blue", "mean_Mean" = "grey", "max_Max" = "red")
 
 agg_plot<- summary_table %>% 
   ggplot(aes(x = month)) + 
-  geom_line(aes(y = Min_mean, col = "Min_mean", group = 1), linewidth = .75) + 
-  geom_line(aes(y = Mean_mean, col = "Mean_mean", group = 1), linewidth = .75) + 
-  geom_line(aes(y = Max_mean, col = "Max_mean", group = 1), linewidth = .75) + 
-  geom_point(aes(y = Min_mean, col = "Min_mean", group = 1), size = 3) + 
-  geom_point(aes(y = Mean_mean, col = "Mean_mean", group = 1), size = 3) + 
-  geom_point(aes(y = Max_mean, col = "Max_mean", group = 1), size = 3) + 
+  geom_line(aes(y = min_Min, col = "min_Min", group = 1), linewidth = .75) + 
+  geom_line(aes(y = mean_Mean, col = "mean_Mean", group = 1), linewidth = .75) + 
+  geom_line(aes(y = max_Max, col = "max_Max", group = 1), linewidth = .75) + 
+  geom_point(aes(y = min_Min, col = "min_Min", group = 1), size = 3) + 
+  geom_point(aes(y = mean_Mean, col = "mean_Mean", group = 1), size = 3) + 
+  geom_point(aes(y = max_Max, col = "max_Max", group = 1), size = 3) + 
   scale_color_manual(values = plot_cols, name = "Legend") + 
   ylab("Temperature (F)")+ xlab("Month") +
    theme(panel.grid.major = element_blank(), 
@@ -400,66 +426,83 @@ agg_plot +
 #| label: monthly-table
 
 summary_table %>%
-  gt() %>%
+select(-c(max_Min, min_Max, min_Mean, max_Mean))%>%
+gt() %>%
   tab_header(
-    title = "All-time Monthly Summaries"
+    title = "All-time Summaries"
   ) %>%
   fmt_number(
     columns = where(is.numeric), 
     decimals = 2
   )%>%
   cols_label(
-    Min_mean = "Mean", 
-    Min_sd = "SD", 
-    Mean_mean = "Mean", 
-    Mean_sd = "SD", 
-    Max_mean = "Mean",
-    Max_sd = "SD"
+    min_Min = "Min", 
+    mean_Min = "Mean",
+    sd_Min = "SD", 
+    mean_Mean = "Mean", 
+    sd_Mean = "SD", 
+    max_Max = "Max",
+    mean_Max = "Mean",
+    sd_Max= "SD"
   ) %>%
   tab_spanner(
     label = "Monthly Minimums",
-    columns = c(Min_mean, Min_sd)
+    columns = c(min_Min, mean_Min, sd_Min)
   ) %>%
   tab_spanner(
     label = "Monthly Means",
-    columns = c(Mean_mean, Mean_sd)
+    columns = c(mean_Mean, sd_Mean)
   ) %>%
   tab_spanner(
     label = "Monthly Maximums",
-    columns = c(Max_mean, Max_sd)
+    columns = c(mean_Max, sd_Max, max_Max)
 )
 
 ```
 :::
 
-## Seasonal Level Summaries
+### Seasonal Level Summaries
 
 :::{.panel-tabset}
 ###### Plot (aggregated)
 ```{r}
 #| label: seasonal-plot-agg
-summary_table <- monthly_weather %>% 
+summary_table_seasonal <- monthly_weather %>% 
   mutate(season = factor(season, levels = c("Winter", "Spring", "Summer", "Fall"))) %>%
+  mutate(month = factor(month, levels = month.abb)) %>%
   group_by(season) %>%
-  summarise(
-    Min_mean = mean(min, na.rm = T), 
-    Min_sd = sd(min, na.rm = T),
-    Mean_mean = mean(mean, na.rm = T), 
-    Mean_sd = sd(mean, na.rm = T),
-    Max_mean = mean(max, na.rm = T), 
-    Max_sd = sd(max, na.rm = T)
-  ) %>%
+   summarise(
+    ## mean 
+    mean_Min = mean(min, na.rm = T), 
+    mean_Mean = mean(mean, na.rm = T), 
+    mean_Max = mean(max, na.rm = T), 
+    ## sd
+    sd_Min= sd(min, na.rm = T),
+    sd_Mean = sd(mean, na.rm = T),
+    sd_Max = sd(max, na.rm = T),
+    ## max 
+    max_Min = max(min, na.rm = T),
+    max_Mean = max(mean, na.rm = T),
+    max_Max = max(max, na.rm = T),
+    ## min
+    min_Min = min(min, na.rm = T),
+    min_Mean = min(mean, na.rm = T),
+    min_Max = min(max, na.rm = T),
+  )%>%
   arrange(season)
 
+plot_cols <- c(plot_cols, "min_Min" = "blue", "mean_Mean" = "grey", "max_Max" = "red")
 
-summary_table %>% 
+
+
+summary_table_seasonal %>% 
   ggplot(aes(x = season)) + 
-  geom_line(aes(y = Min_mean, col = "Min_mean", group = 1), linewidth = .75) + 
-  geom_line(aes(y = Mean_mean, col = "Mean_mean", group = 1), linewidth = .75) + 
-  geom_line(aes(y = Max_mean, col = "Max_mean", group = 1), linewidth = .75) + 
-  geom_point(aes(y = Min_mean, col = season, group = 1), size = 3) + 
-  geom_point(aes(y = Mean_mean, col = season, group = 1), size = 3) + 
-  geom_point(aes(y = Max_mean, col = season, group = 1), size = 3) + 
+  geom_line(aes(y = min_Min, col = "min_Min", group = 1), linewidth = .75) + 
+  geom_line(aes(y = mean_Mean, col = "Mean_mean", group = 1), linewidth = .75) + 
+  geom_line(aes(y = max_Max, col = "max_Max", group = 1), linewidth = .75) + 
+  geom_point(aes(y = min_Min, col = season, group = 1), size = 3) + 
+  geom_point(aes(y = mean_Mean, col = season, group = 1), size = 3) + 
+  geom_point(aes(y = max_Max, col = season, group = 1), size = 3) + 
   scale_color_manual(values = plot_cols, name = "Legend") + 
   ylab("Temperature (F)")+ xlab("Season") +
    theme(panel.grid.major = element_blank(), 
@@ -471,14 +514,14 @@ summary_table %>%
 ###### Plot (raw)
 ```{r}
 #| label: seasonal-plot-raw
-summary_table %>% 
+summary_table_seasonal %>% 
   ggplot(aes(x = season)) + 
-  geom_line(aes(y = Min_mean, col = "Min_mean", group = 1), linewidth = .75) + 
-  geom_line(aes(y = Mean_mean, col = "Mean_mean", group = 1), linewidth = .75) + 
-  geom_line(aes(y = Max_mean, col = "Max_mean", group = 1), linewidth = .75) + 
-  geom_point(aes(y = Min_mean, col = season, group = 1), size = 3) + 
-  geom_point(aes(y = Mean_mean, col = season, group = 1), size = 3) + 
-  geom_point(aes(y = Max_mean, col = season, group = 1), size = 3) + 
+  geom_line(aes(y = min_Min, col = "min_Min", group = 1), linewidth = .75) + 
+  geom_line(aes(y = mean_Mean, col = "mean_Mean", group = 1), linewidth = .75) + 
+  geom_line(aes(y = max_Max, col = "max_Max", group = 1), linewidth = .75) + 
+  geom_point(aes(y = min_Min, col = season, group = 1), size = 3) + 
+  geom_point(aes(y = mean_Mean, col = season, group = 1), size = 3) + 
+  geom_point(aes(y = max_Max, col = season, group = 1), size = 3) + 
   scale_color_manual(values = plot_cols, name = "Legend") + 
   geom_point(data = monthly_weather, aes(x = season, y = min, col = season), alpha = 0.1, position = position_jitter()) +
   geom_point(data = monthly_weather, aes(x = season, y = mean, col = season), alpha = 0.1, position = position_jitter()) +
@@ -493,26 +536,6 @@ summary_table %>%
 ###### Histogram
 ```{r}
 #| label: all_time-histogram-seasonal
-summary_table_seasonal <- monthly_weather %>% 
-  group_by(season)%>%
-  summarise(
-    ## mean 
-    Min_mean = mean(min, na.rm = T), 
-    Mean_mean = mean(mean, na.rm = T), 
-    Max_mean = mean(max, na.rm = T), 
-    ## sd
-    Min_sd = sd(min, na.rm = T),
-    Mean_sd = sd(mean, na.rm = T),
-    Max_sd = sd(max, na.rm = T),
-    ## max 
-    Min_max = max(min, na.rm = T),
-    Mean_max = max(mean, na.rm = T),
-    Max_max = max(max, na.rm = T),
-    ## min
-    Min_min = min(min, na.rm = T),
-    Mean_min = min(mean, na.rm = T),
-    Max_min = min(max, na.rm = T),
-  )
 
 ## chat help
 
@@ -521,7 +544,7 @@ facet_vars <- c("min", "mean", "max")
 # Step 1: Pivot your summary table
 vline_data <- summary_table_seasonal%>%
   group_by(season) %>%
-  pivot_longer(cols = contains(c("Min_mean", "Mean_mean", "Max_mean")),
+  pivot_longer(cols = contains(c("min_Min", "mean_Mean", "max_Max")),
                names_to = "Statistic", values_to = "xintercept") 
 vline_data$Statistic = rep(facet_vars, times = 4)
 
@@ -549,35 +572,39 @@ monthly_weather %>%
 ###### Table
 ```{r}
 #| label: seasonal-table
-summary_table %>%
-  gt() %>%
+summary_table_seasonal %>%
+ select(-c(max_Min, min_Max, min_Mean, max_Mean))%>%
+gt() %>%
   tab_header(
-    title = "All-time Yearly Summaries"
+    title = "All-time Summaries"
   ) %>%
   fmt_number(
     columns = where(is.numeric), 
     decimals = 2
   )%>%
   cols_label(
-    Min_mean = "Mean", 
-    Min_sd = "SD", 
-    Mean_mean = "Mean", 
-    Mean_sd = "SD", 
-    Max_mean = "Mean",
-    Max_sd = "SD"
+    min_Min = "Min", 
+    mean_Min = "Mean",
+    sd_Min = "SD", 
+    mean_Mean = "Mean", 
+    sd_Mean = "SD", 
+    max_Max = "Max",
+    mean_Max = "Mean",
+    sd_Max= "SD"
   ) %>%
   tab_spanner(
     label = "Monthly Minimums",
-    columns = c(Min_mean, Min_sd)
+    columns = c(min_Min, mean_Min, sd_Min)
   ) %>%
   tab_spanner(
     label = "Monthly Means",
-    columns = c(Mean_mean, Mean_sd)
+    columns = c(mean_Mean, sd_Mean)
   ) %>%
   tab_spanner(
     label = "Monthly Maximums",
-    columns = c(Max_mean, Max_sd)
+    columns = c(mean_Max, sd_Max, max_Max)
 )
+
 ```
 :::
 
@@ -589,27 +616,41 @@ summary_table %>%
 ```{r}
 #| label: yearly-plot-agg
 
-summary_table <- monthly_weather %>% 
+summary_table_yearly<- monthly_weather %>% 
   group_by(year) %>%
-  summarise(
-    Min_mean = mean(min, na.rm = T), 
-    Min_sd = sd(min, na.rm = T),
-    Mean_mean = mean(mean, na.rm = T), 
-    Mean_sd = sd(mean, na.rm = T),
-    Max_mean = mean(max, na.rm = T), 
-    Max_sd = sd(max, na.rm = T)
-  ) %>%
+   summarise(
+    ## mean 
+    mean_Min = mean(min, na.rm = T), 
+    mean_Mean = mean(mean, na.rm = T), 
+    mean_Max = mean(max, na.rm = T), 
+    ## sd
+    sd_Min= sd(min, na.rm = T),
+    sd_Mean = sd(mean, na.rm = T),
+    sd_Max = sd(max, na.rm = T),
+    ## max 
+    max_Min = max(min, na.rm = T),
+    max_Mean = max(mean, na.rm = T),
+    max_Max = max(max, na.rm = T),
+    ## min
+    min_Min = min(min, na.rm = T),
+    min_Mean = min(mean, na.rm = T),
+    min_Max = min(max, na.rm = T),
+  )%>%
   arrange(year)
 
+plot_cols <- c(plot_cols, "min_Min" = "blue", "mean_Mean" = "grey", "max_Max" = "red")
 
-summary_table %>% 
+
+
+agg_plot <- summary_table_yearly %>% 
+  filter(year >1909) %>%
   ggplot(aes(x = year)) + 
-  geom_line(aes(y = Min_mean, col = "Min_mean", group = 1), linewidth = .75) + 
-  geom_line(aes(y = Mean_mean, col = "Mean_mean", group = 1), linewidth = .75) + 
-  geom_line(aes(y = Max_mean, col = "Max_mean", group = 1), linewidth = .75) + 
-  geom_point(aes(y = Min_mean, col = "Min_mean", group = 1), size = 3) + 
-  geom_point(aes(y = Mean_mean, col = "Mean_mean", group = 1), size = 3) + 
-  geom_point(aes(y = Max_mean, col = "Max_mean", group = 1), size = 3) + 
+  geom_line(aes(y = min_Min, col = "min_Min", group = 1), linewidth = .75) + 
+  geom_line(aes(y = mean_Mean, col = "Mean_mean", group = 1), linewidth = .75) + 
+  geom_line(aes(y = max_Max, col = "max_Max", group = 1), linewidth = .75) + 
+  geom_point(aes(y = min_Min, col = "min_Min", group = 1), size = 3) + 
+  geom_point(aes(y = mean_Mean, col = "Mean_mean", group = 1), size = 3) + 
+  geom_point(aes(y = max_Max, col = "max_Max", group = 1), size = 3) + 
   scale_color_manual(values = plot_cols, name = "Legend") + 
   ylab("Temperature (F)")+ xlab("Year") +
    theme(panel.grid.major = element_blank(), 
@@ -617,19 +658,13 @@ summary_table %>%
        panel.background = element_blank(), 
        axis.line = element_blank(), 
        axis.title.y = element_text(angle = 0, vjust = .5)) + ylim(c(0,120))
+
+agg_plot
 ```
 ###### Plot (raw)
 ```{r}
 #| label: yearly-plot-raw
-summary_table %>% 
-  ggplot(aes(x = year)) + 
-  geom_line(aes(y = Min_mean, col = "Min_mean", group = 1), linewidth = .75) + 
-  geom_line(aes(y = Mean_mean, col = "Mean_mean", group = 1), linewidth = .75) + 
-  geom_line(aes(y = Max_mean, col = "Max_mean", group = 1), linewidth = .75) + 
-  geom_point(aes(y = Min_mean, col = "Min_mean", group = 1), size = 3) + 
-  geom_point(aes(y = Mean_mean, col = "Mean_mean", group = 1), size = 3) + 
-  geom_point(aes(y = Max_mean, col = "Max_mean", group = 1), size = 3) + 
-  scale_color_manual(values = plot_cols, name = "Legend") + 
+agg_plot + 
   geom_point(data = monthly_weather, aes(x = year, y = min, col = "min"), alpha = 0.1, position = position_jitter()) +
   geom_point(data = monthly_weather, aes(x = year, y = mean, col = "mean"), alpha = 0.1, position = position_jitter()) +
   geom_point(data = monthly_weather, aes(x = year, y = max, col = "max"), alpha = 0.1, position = position_jitter()) +
@@ -643,15 +678,7 @@ summary_table %>%
 ###### Plot (raw + seasonal)
 ```{r}
 #| label: yearly-plot-raw-seasonal
-summary_table %>% 
-  ggplot(aes(x = year)) + 
-  geom_line(aes(y = Min_mean, col = "Min_mean", group = 1), linewidth = .75) + 
-  geom_line(aes(y = Mean_mean, col = "Mean_mean", group = 1), linewidth = .75) + 
-  geom_line(aes(y = Max_mean, col = "Max_mean", group = 1), linewidth = .75) + 
-  geom_point(aes(y = Min_mean, col = "Min_mean", group = 1), size = 3) + 
-  geom_point(aes(y = Mean_mean, col = "Mean_mean", group = 1), size = 3) + 
-  geom_point(aes(y = Max_mean, col = "Max_mean", group = 1), size = 3) + 
-  scale_color_manual(values = plot_cols, name = "Legend") + 
+agg_plot + 
   geom_point(data = monthly_weather, aes(x = year, y = min, col = season), alpha = 0.1, position = position_jitter()) +
   geom_point(data = monthly_weather, aes(x = year, y = mean, col =season), alpha = 0.1, position = position_jitter()) +
   geom_point(data = monthly_weather, aes(x = year, y = max, col = season), alpha = 0.1, position = position_jitter()) +
@@ -666,35 +693,291 @@ summary_table %>%
 ```{r}
 #| label: yearly-table
 
-summary_table %>%
-  gt() %>%
+summary_table_yearly %>%
+  mutate(year = ymd(paste0(year, "-01-01")))%>% select(-c(max_Min, min_Max, min_Mean, max_Mean))%>%
+gt() %>%
   tab_header(
-    title = "All-time Yearly Summaries"
+    title = "All-time Summaries"
   ) %>%
-  fmt_number(
+    fmt_number(
     columns = where(is.numeric), 
     decimals = 2
   )%>%
+  fmt_date(
+    columns = year,
+    date_style = "year"
+  )%>%
   cols_label(
-    Min_mean = "Mean", 
-    Min_sd = "SD", 
-    Mean_mean = "Mean", 
-    Mean_sd = "SD", 
-    Max_mean = "Mean",
-    Max_sd = "SD"
+    min_Min = "Min", 
+    mean_Min = "Mean",
+    sd_Min = "SD", 
+    mean_Mean = "Mean", 
+    sd_Mean = "SD", 
+    max_Max = "Max",
+    mean_Max = "Mean",
+    sd_Max= "SD"
   ) %>%
   tab_spanner(
     label = "Monthly Minimums",
-    columns = c(Min_mean, Min_sd)
+    columns = c(min_Min, mean_Min, sd_Min)
   ) %>%
   tab_spanner(
     label = "Monthly Means",
-    columns = c(Mean_mean, Mean_sd)
+    columns = c(mean_Mean, sd_Mean)
   ) %>%
   tab_spanner(
     label = "Monthly Maximums",
-    columns = c(Max_mean, Max_sd)
+    columns = c(mean_Max, sd_Max, max_Max)
 )
 ```
 :::
 :::
+
+## Exceedances
+
+When the seasonal max or min reaches a new high or low, indicate this with a true/false.
+```{r}
+#| label: compute-exceedances
+out <- monthly_weather %>%
+group_by(season) %>%
+arrange(date) %>%
+mutate(
+start_flag = year > 1977,
+cummax = cummax_ignore_na(max, start_flag),
+cummin = cummin_ignore_na(min, start_flag),
+new_max = cummax == max,
+new_min = cummin == min
+) %>%
+ungroup()
+
+monthly_weather$new_max <- out$new_max
+monthly_weather$new_min <- out$new_min
+```
+
+We can either set this to start from the beginning of the series, or start the “tracker” at a certain specific time. Since we will have three parts to our music and we want the exceedances to be part 3, we will start the tracker in 1977 (see Sonifcation Design page for reasoning behind choice of 1977).
+
+### Overall Exceedance
+:::{.panel-tabset}
+## All time exceedance
+```{r}
+#| label: exceed-alltime
+out_all <- monthly_weather %>%
+arrange(date) %>%
+mutate(
+start_flag = year > 1899,
+cummax = cummax_ignore_na(max, start_flag),
+cummin = cummin_ignore_na(min, start_flag),
+new_max = cummax == max,
+new_min = cummin == min
+) %>%
+ungroup()
+
+monthly_weather$new_max_all_time <- out_all$new_max
+monthly_weather$new_min_all_time <- out_all$new_min
+
+monthly_weather %>%
+ggplot(aes(x = date)) +
+  geom_line(aes(y = min, color = "min")) +
+  geom_point(aes(y = min, color = "min"), alpha = 0.1) +
+  geom_line(aes(y = max, color = "max")) +
+  geom_point(aes(y = max, color = "max"), alpha = 0.1) +
+  geom_point(data = filter(monthly_weather, new_max_all_time),
+             aes(x = date, y = max, color = "max"), size = 6, shape = 17) +
+  geom_point(data = filter(monthly_weather, new_min_all_time),
+             aes(x = date, y = min, color = "min"), size = 6, shape = 15) +
+  scale_color_manual(values = plot_cols, name = "Exceedance\nType") + 
+  scale_x_date(labels = monthly_weather$season_year[monthly_weather$season == "Winter" & monthly_weather$season_year %%5 ==0], 
+               breaks = monthly_weather$xmin[monthly_weather$season == "Winter"& monthly_weather$season_year %%5 ==0]) +
+  theme(axis.text.x = element_text(angle = 25))
+```
+## Exceedance since 1977
+```{r}
+#| label: exceed-1977
+out <- monthly_weather %>%
+arrange(date) %>%
+mutate(
+start_flag = year > 1977,
+cummax = cummax_ignore_na(max, start_flag),
+cummin = cummin_ignore_na(min, start_flag),
+new_max = cummax == max,
+new_min = cummin == min
+) %>%
+ungroup()
+
+monthly_weather$new_max <- out$new_max
+monthly_weather$new_min <- out$new_min
+
+monthly_weather %>%
+ggplot(aes(x = date)) +
+  geom_line(aes(y = min, color = "min")) +
+  geom_point(aes(y = min, color = "min"), alpha = 0.1) +
+  geom_line(aes(y = max, color = "max")) +
+  geom_point(aes(y = max, color = "max"), alpha = 0.1) +
+  geom_point(data = filter(monthly_weather, new_max),
+             aes(x = date, y = max, color = "max"), size = 6, shape = 17) +
+  geom_point(data = filter(monthly_weather, new_min),
+             aes(x = date, y = min, color = "min"), size = 6, shape = 15) +
+  scale_color_manual(values = plot_cols, name = "Exceedance\nType") + 
+  scale_x_date(labels = monthly_weather$season_year[monthly_weather$season == "Winter" & monthly_weather$season_year %%5 ==0], 
+               breaks = monthly_weather$xmin[monthly_weather$season == "Winter"& monthly_weather$season_year %%5 ==0]) +
+  theme(axis.text.x = element_text(angle = 25))
+```
+:::
+
+Most of the all time highs occur in summer, and most all-time lows occur in winter. This is unsurprising, and basically a consequence of the statistics we are looking at and the properties of the maximum and the minimum. 
+
+### Seasonal Exceedances
+
+Since our goal is to summarize data for sonification, we want to make sure the information does not get frontloaded all at the beginning. So, looking at seasonal exceedances gives us more chances to hear extremes. 
+
+Note that the unusually high fall temperatures are both for all time and if we start the "new extreme" timer in 1977. 
+
+:::{.panel-tabset}
+## All time seasonal exceedance
+```{r}
+#| label: seas-exceed-alltime
+out_all <- monthly_weather %>%
+group_by(season)%>%
+arrange(date) %>%
+mutate(
+start_flag = year > 1899,
+cummax = cummax_ignore_na(max, start_flag),
+cummin = cummin_ignore_na(min, start_flag),
+new_max = cummax == max,
+new_min = cummin == min
+) %>%
+ungroup()
+
+monthly_weather$new_max_all_time <- out_all$new_max
+monthly_weather$new_min_all_time <- out_all$new_min
+
+monthly_weather %>%
+ggplot(aes(x = date)) +
+  geom_line(aes(y = min, color = "min")) +
+  geom_point(aes(y = min, color = "min"), alpha = 0.1) +
+  geom_line(aes(y = max, color = "max")) +
+  geom_point(aes(y = max, color = "max"), alpha = 0.1) +
+  geom_point(data = filter(monthly_weather, new_max_all_time),
+             aes(x = date, y = max, color = season), size = 6, shape = 17) +
+  geom_point(data = filter(monthly_weather, new_min_all_time),
+             aes(x = date, y = min, color = season), size = 6, shape = 15) +
+  scale_color_manual(values = plot_cols, name = "Exceedance\nType") + 
+  scale_x_date(labels = monthly_weather$season_year[monthly_weather$season == "Winter" & monthly_weather$season_year %%5 ==0], 
+               breaks = monthly_weather$xmin[monthly_weather$season == "Winter"& monthly_weather$season_year %%5 ==0]) +
+  theme(axis.text.x = element_text(angle = 25))
+```
+## Seasonal exceedance since 1977
+```{r}
+#| label: seas-exeed-1977
+out <- monthly_weather %>%
+group_by(season)%>%
+arrange(date) %>%
+mutate(
+start_flag = year > 1977,
+cummax = cummax_ignore_na(max, start_flag),
+cummin = cummin_ignore_na(min, start_flag),
+new_max = cummax == max,
+new_min = cummin == min
+) %>%
+ungroup()
+
+monthly_weather$new_max <- out$new_max
+monthly_weather$new_min <- out$new_min
+
+monthly_weather %>%
+ggplot(aes(x = date)) +
+  geom_line(aes(y = min, color = "min")) +
+  geom_point(aes(y = min, color = "min"), alpha = 0.1) +
+  geom_line(aes(y = max, color = "max")) +
+  geom_point(aes(y = max, color = "max"), alpha = 0.1) +
+  geom_point(data = filter(monthly_weather, new_max),
+             aes(x = date, y = max, color = season), size = 6, shape = 17) +
+  geom_point(data = filter(monthly_weather, new_min),
+             aes(x = date, y = min, color = season), size = 6, shape = 15) +
+  scale_color_manual(values = plot_cols, name = "Exceedance\nType") + 
+  scale_x_date(labels = monthly_weather$season_year[monthly_weather$season == "Winter" & monthly_weather$season_year %%5 ==0], 
+               breaks = monthly_weather$xmin[monthly_weather$season == "Winter"& monthly_weather$season_year %%5 ==0]) +
+  theme(axis.text.x = element_text(angle = 25))
+```
+:::
+
+
+
+
+
+
+## Missing Data
+As you will hear (and see) in the animation, there are occasionally missing data points, resulting in silence!
+
+### Monthly level missing data
+```{r}
+#| label: monthly-missing
+## code inspired by https://r-graph-gallery.com/79-levelplot-with-ggplot2.html
+x <- monthly_weather$date
+y <- c("min", "avg", "max")
+data <- expand.grid(X=x, Y=y)
+data$Z <- c(ifelse(is.na(monthly_weather$min),"missing", "observed"),
+            ifelse(is.na(monthly_weather$mean),"missing", "observed"),
+            ifelse(is.na(monthly_weather$max),"missing", "observed"))
+n_year <- nrow(monthly_weather)/12
+
+x_breaks <- seq(from = ymd(monthly_weather$date[1]),
+                to = ymd(monthly_weather$date[1392]), 
+                length.out = floor(n_year/10))
+x_labs <- year(x_breaks)
+
+change_date_part_1 <- ymd("1910-01-01")
+change_date_part_2 <- monthly_weather[which.max(monthly_weather$max),"date"] %>% pull()
+change_date_part_3 <- ymd("1977-01-01")
+  
+data %>% tibble() %>%
+mutate(X = as.Date(X, "%Y-%m-%d"))%>%
+  ggplot(aes(x= X, y=factor(Y), fill = Z)) +
+  geom_tile(height = 0.5) +
+  scale_x_date(breaks = x_breaks, labels = x_labs) +
+  scale_fill_manual(name = "",
+    values = c("missing" = "black", "observed" = "grey90")
+  ) + ylab("Summary \nStatistic") + xlab("Year (one line per month)") +
+ theme(panel.grid.major = element_blank(), 
+       panel.grid.minor = element_blank(),
+       panel.background = element_blank(), 
+       axis.line = element_blank(), 
+       axis.title.y = element_text(angle = 0, vjust = .5))
+```
+
+## Data for sonification 
+While busy, this is a visualization of the entire data set we will be working with for our sonification. 
+
+The full monthly history of the series is too much for one plot-- this is why we want to animate and/or sonify it-- to add a time dimension to our perceptualization and allowing us to "zoom in" as we did on the beginning of the series above. 
+
+
+```{r}
+#| label: data-to-sonify
+ggplot(monthly_weather, aes(x = date)) +
+  geom_line(aes(y = min, color = "min")) +
+  geom_point(aes(y = min, color = season)) +
+  geom_line(aes(y = max, color = "max")) +
+  geom_point(aes(y = max, color = season)) +
+  geom_line(aes(y = mean, color = "mean")) +
+  geom_point(aes(y = mean, color = season)) +
+  geom_point(data = filter(monthly_weather, new_max),
+             aes(x = date, y = max, color = season), size = 6, shape = 17) +
+  geom_point(data = filter(monthly_weather, new_min),
+             aes(x = date, y = min, color = season), size = 6, shape = 15) +
+  scale_color_manual(values = plot_cols) + 
+  scale_x_date(labels = monthly_weather$season_year[monthly_weather$season == "Winter" & monthly_weather$season_year %%5 ==0], 
+               breaks = monthly_weather$xmin[monthly_weather$season == "Winter"& monthly_weather$season_year %%5 ==0]) +
+  theme(axis.text.x = element_text(angle = 25))
+```
+
+
+## Output data
+
+This file is read in at the top of the sonification design details.
+
+```{r}
+#| label: output-data
+#| code-fold: false
+save(monthly_weather, file = "data/monthly_weather")
+save(plot_cols, file = "data/plot_cols")
+```

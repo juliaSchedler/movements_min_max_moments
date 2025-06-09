@@ -1,12 +1,13 @@
---- 
+---
 title: Movements of Minimums, Maximums, and Moments
 author: Julia Schedler
 ---
 
-Please see the other pages on this website for a description of how this sonification and animation was created. Otherwise, just enjoy (looks better in full screen with the lights off).
+Please see the other pages on this website for a description of how the data were sourced and the sonification created (animation details are coming!).
+
+Otherwise, just enjoy the video of the animation (looks better in full screen with the lights off).
 
 {{< video https://www.youtube.com/watch?v=_8s41yjyj-w>}}
-
 
 ## Learning more
 

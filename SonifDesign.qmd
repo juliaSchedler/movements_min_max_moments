@@ -18,6 +18,7 @@ library(fpp3)
 
 ## read in pre-processed data
 load("data/monthly_weather")
+load("data/plot_cols")
 
 ```
 
@@ -27,13 +28,18 @@ We used the ggplot2 package [-@ggplot] in R [-@rlang] for visuals, and the gm pa
 
 ## Splitting into parts
 
-After a brief conversation with the choreographer, Josh Schneider, it was determined that having all three series (maximum, minimum, average) at once was a bit much for the full history of the data set. As an homage to our shared passion for musical theatre, we settled on a "three act" (three part) structure. As such, we need some cut points for the sonification. The first is when the all time high temperature for the entire history of Paso Robles was hit:
+After a brief conversation with the choreographer, Josh Schneider, it was determined that having all three series (maximum, minimum, average) at once was a bit much for the full history of the data set. As an homage to our shared passion for musical theatre, we settled on a "three act" (three part) structure. As such, we need some cut points for the sonification.
 
 ```{r}
-## New high for Paso Robles
-change_date_part_1 <- which.max(monthly_weather$max);
-monthly_weather[change_date_part_1,c("date", "max", "min")]
+## all time high for Paso Robles
+change_date_part_2 <- monthly_weather[which.max(monthly_weather$max),"date"] %>% pull()
+high_date <- ymd(change_date_part_2) %>% yearmonth() %>%format("%B %Y")
+change_date_part_2_ID <- which.max(monthly_weather$max);
+all_time_high <- monthly_weather$max[change_date_part_2_ID]
+
 ```
+
+The first is when the all time high temperature for the entire history of Paso Robles was hit: `{r}all_time_high` in `{r}change_date_part_2`
 
 Auditorially, we represent this change by splitting from only tracking the average to tracking both the maximum and the minimum.
 
@@ -44,6 +50,38 @@ For the second part, the year that climate scientists began building models pred
 change_date_part_2 <- min(which(monthly_weather$year == 1977))
 monthly_weather[change_date_part_2,]
 ```
+
+::: panel-tabset
+## All Parts
+
+```{r}
+ggplot(monthly_weather, aes(x = date)) +
+  geom_line(aes(y = min, color = "min")) +
+  geom_point(aes(y = min, color = season)) +
+  geom_line(aes(y = max, color = "max")) +
+  geom_point(aes(y = max, color = season)) +
+  geom_line(aes(y = mean, color = "mean")) +
+  geom_point(aes(y = mean, color = season)) +
+  geom_point(data = filter(monthly_weather, new_max),
+             aes(x = date, y = max, color = season), size = 6, shape = 17) +
+  geom_point(data = filter(monthly_weather, new_min),
+             aes(x = date, y = min, color = season), size = 6, shape = 15) +
+  scale_color_manual(values = plot_cols) + 
+  scale_x_date(labels = monthly_weather$season_year[monthly_weather$season == "Winter" & monthly_weather$season_year %%5 ==0], 
+               breaks = monthly_weather$xmin[monthly_weather$season == "Winter"& monthly_weather$season_year %%5 ==0]) +
+    geom_vline(xintercept = change_date_part_1)+
+  geom_vline(xintercept = change_date_part_2)+
+  geom_vline(xintercept = change_date_part_3) +
+  geom_point(aes(x = ))
+  theme(axis.text.x = element_text(angle = 25))
+```
+
+## Part 1
+
+## Part 2
+
+## Part 3
+:::
 
 ## Sonification method
 
@@ -161,9 +199,7 @@ gm::show(music_all, to = c("audio"))
  gm::export(music_all, "mmmm_sonification_paso_robles.pdf")
 ```
 
-```{=html} 
 <embed src="mmmm_sonification_paso_robles.pdf" width="100%" height="600px" type="application/pdf">
-```
 
 ## Learning more
 
