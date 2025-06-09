@@ -96,6 +96,9 @@ ul.task-list li input[type="checkbox"] {
     <div class="pt-lg-2 mt-2 text-left sidebar-header">
     <div class="sidebar-title mb-0 py-0">
       <a href="./">Movements of Minumums, Maximums and Moments</a> 
+        <div class="sidebar-tools-main">
+    <a href="https://github.com/YOUR_GITHUB_USERNAME/YOUR_REPOSITORY_NAME" title="" class="quarto-navigation-tool px-1" aria-label=""><i class="bi bi-github"></i></a>
+</div>
     </div>
       </div>
         <div class="mt-2 flex-shrink-0 align-items-center">
@@ -105,22 +108,33 @@ ul.task-list li input[type="checkbox"] {
         </div>
     <div class="sidebar-menu-container"> 
     <ul class="list-unstyled mt-1">
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="./index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Sonified Animation</span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="./index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Sonification</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./data.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Data and Processing</span></a>
   </div>
 </li>
-        <li class="sidebar-item">
+          <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./SonifDesign.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Design</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./News.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">News Stories</span></a>
   </div>
 </li>
         <li class="sidebar-item">
@@ -134,8 +148,15 @@ ul.task-list li input[type="checkbox"] {
 </nav>
 <div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
 <!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
-        
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#california-coastal-classroom-research-collaborative" id="toc-california-coastal-classroom-research-collaborative" class="nav-link active" data-scroll-target="#california-coastal-classroom-research-collaborative">California Coastal Classroom Research Collaborative</a></li>
+  <li><a href="#additional-acknowledgements" id="toc-additional-acknowledgements" class="nav-link" data-scroll-target="#additional-acknowledgements">Additional Acknowledgements</a></li>
+  </ul>
+</nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
@@ -159,19 +180,46 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
-<p>This sonification was joint work among Dr.&nbsp;Julia Schedler, Donya Behroozi, Josh Schneider, and Dr.&nbsp;Sinem Demirci.</p>
-<ul>
-<li><p><a href="https://statistics.calpoly.edu/julia-schedler">Dr.&nbsp;Julia Schedler</a> is Assistant Professor in the Statistics Department in the Bailey College of Science and Mathematics at Cal Poly SLO. Besides sonification, Dr.&nbsp;Schedler works on time series modeling, spatial modeling, and visualization.</p></li>
-<li><p>Josh Schneider is an undergraduate student at Cal Poly, and choreographed the movements</p></li>
-<li><p>Donya Behroozi is an undergraduate student at Cal Poly, and helped develop the sonification function code</p></li>
-<li><p>Dr.&nbsp;Sinem Demirci is a lecturer in the Statistics Department at Cal Poly and guided discussions of sonification design and pedagogy</p></li>
-</ul>
-<p>Additionally, we are incredibly grateful to the feedback from our C3RC collaborations, Dr.&nbsp;Jeanine Scaramozzino, Dr.&nbsp;Aaron Liggett, and Annica Wu.</p>
-<p>Further information is available on the <a href="https://guides.lib.calpoly.edu/steam">3CRC Webpage</a>.</p>
-<p>Additional gratitude to everyone on the math department side of the 2nd floor of faculty offices east, especially Dr.&nbsp;Charlotte Mann and Dr.&nbsp;Ulric Lund, for listening to drafts of the sonifications.</p>
+<p>On the statistics side, sonification arose from prior joint work among Dr.&nbsp;Julia Schedler, Donya Behroozi, and Dr.&nbsp;Sinem Demirci.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Role</th>
+<th>Abount</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="https://statistics.calpoly.edu/julia-schedler">Dr.&nbsp;Julia Schedler</a></td>
+<td>Conceptualization, data processing and sourcing, sonification design and implementation, animation.</td>
+<td>Dr.&nbsp;Julia Schedler is Assistant Professor in the Statistics Department in the Bailey College of Science and Mathematics at Cal Poly SLO. Besides sonification, Dr.&nbsp;Schedler works on time series modeling, spatial modeling, and workflows for customizing learning experiences.</td>
+</tr>
+<tr class="even">
+<td>Donya Behroozi</td>
+<td>Conceptualization and sonification function code</td>
+<td>Recent undergraduate and soon-to-be masters student at Cal Poly.</td>
+</tr>
+<tr class="odd">
+<td><a href="https://statistics.calpoly.edu/sinem-demirci">Dr.&nbsp;Sinem Demirci</a></td>
+<td>Conceptualization and project management</td>
+<td>Lecturer in the Statistics Department in the Bailey College of Science and Mathematics at Cal Poly SLO. Dr.&nbsp;Demirci’s research interests include Statistics and Data Science education and environmental and sustainability education.</td>
+</tr>
+</tbody>
+</table>
+<p>On the performance side, Josh Schneider choreographed the dance and designed the lighting sequence.</p>
+<section id="california-coastal-classroom-research-collaborative" class="level3">
+<h3 class="anchored" data-anchor-id="california-coastal-classroom-research-collaborative">California Coastal Classroom Research Collaborative</h3>
+<p>We are incredibly grateful to the feedback from our C3RC collaborations, Dr.&nbsp;Jeanine Scaramozzino, Dr.&nbsp;Aaron Liggett, and Annica Wu (the artist behind the poppy art on the event fliers and the video!).</p>
+<p>Further information is available on the <a href="https://guides.lib.calpoly.edu/steam">3CRC Webpage</a> (under construction).</p>
+</section>
+<section id="additional-acknowledgements" class="level3">
+<h3 class="anchored" data-anchor-id="additional-acknowledgements">Additional Acknowledgements</h3>
+<p>Additional gratitude to everyone on the math department side of the 2nd floor of faculty offices east, especially Dr.&nbsp;Charlotte Mann and Dr.&nbsp;Ulric Lund, for listening to and/or being annoyed by drafts of the sonifications.</p>
 <p>And finally, I am extremely grateful to the funding organization within Cal Poly, unfortunately I did not get my ducks in a row so I will need to update with that information later. 🦆</p>
 
 
+</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
