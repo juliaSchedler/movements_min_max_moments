@@ -482,7 +482,7 @@ animation_only_PENUL2.mp4</code></pre>
 </section>
 <section id="sync-audio" class="level2">
 <h2 class="anchored" data-anchor-id="sync-audio">Sync audio</h2>
-<p>Just to be sure, we trim the music and format it as an .m4a because for some reason I don’t really understand that works better.</p>
+<p>Just to be sure, we trim the music and format it as an .m4a because for some reason I don’t really understand that works better. Musescore seems to add 3 seconds of silence to each audio, so you will drive yourself crazy getting it to all sync up (ask me know I know).</p>
 <p>Then, <code>ffmpeg</code> creates the final animation and sonification as an .mp4 file.</p>
 <div class="cell">
 <pre class="text cell-code"><code>ffmpeg -i trimmed_music_new_T.mp3 -t 348.000000 -c:a aac -movflags +faststart trimmed_music_final.m4a
