@@ -20,6 +20,8 @@ library(fpp3)
 load("data/monthly_weather")
 load("data/plot_cols")
 
+## don't want to start with a big pause or the audience will be confused 
+monthly_weather <- monthly_weather %>% filter(year>1909)
 ```
 
 ## Packages

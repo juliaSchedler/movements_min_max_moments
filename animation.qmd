@@ -39,6 +39,7 @@ ffprobe -v error -show_entries format=duration -of csv="p=0" trimmed_music_new_T
 
 ```{r}
 #| include: false
+#| eval: true
 audio_duration <- as.numeric(readLines("audio_duration.txt"))
 cat("Audio duration (seconds):", audio_duration)
 ```
@@ -312,7 +313,7 @@ animation_only_PENUL2.mp4
 
 ## Sync audio
 
-Just to be sure, we trim the music and format it as an .m4a because for some reason I don't really understand that works better.
+Just to be sure, we trim the music and format it as an .m4a because for some reason I don't really understand that works better. Musescore seems to add 3 seconds of silence to each audio, so you will drive yourself crazy getting it to all sync up (ask me know I know).
 
 
 Then, `ffmpeg` creates the final animation and sonification as an .mp4 file. 
