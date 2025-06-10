@@ -7,6 +7,6 @@ We made the KSBY (Central Coast local) News!
 
 KSBY won't let me embed their video so click "Watch on Youtube" below.
 
-There's also a video at the written article link
+There's also a video at the [written article link](https://www.ksby.com/san-luis-obispo/cal-poly-dancers-bring-climate-data-to-life).
 
 {{< video https://www.youtube.com/watch?v=9uY73d2VRT4>}}
