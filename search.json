@@ -92,10 +92,10 @@
     "href": "SonifDesign.html",
     "title": "Sonification Design and Music",
     "section": "",
-    "text": "Code\nlibrary(gm)\nlibrary(music)\nlibrary(tidyverse)\nlibrary(fpp3)\n\n## read in pre-processed data\nload(\"data/monthly_weather\")",
+    "text": "Code\nlibrary(gm)\nlibrary(music)\nlibrary(tidyverse)\nlibrary(fpp3)\n\n## read in pre-processed data\nload(\"data/monthly_weather\")\nload(\"data/plot_cols\")",
     "crumbs": [
       "Sonification",
-      "Design"
+      "Sonification Design"
     ]
   },
   {
@@ -103,10 +103,10 @@
     "href": "SonifDesign.html#packages",
     "title": "Sonification Design and Music",
     "section": "Packages",
-    "text": "Packages\nWe used the ggplot2 package (2016) in R (2021) for visuals, and the gm package to make the music (Mao 2024).",
+    "text": "Packages\nWe used the ggplot2 package (2016) in R (2021) for visuals, and the gm 1package to make the music (Mao 2024).",
     "crumbs": [
       "Sonification",
-      "Design"
+      "Sonification Design"
     ]
   },
   {
@@ -114,10 +114,10 @@
     "href": "SonifDesign.html#splitting-into-parts",
     "title": "Sonification Design and Music",
     "section": "Splitting into parts",
-    "text": "Splitting into parts\nAfter a brief conversation with the choreographer, Josh Schneider, it was determined that having all three series (maximum, minimum, average) at once was a bit much for the full history of the data set. As an homage to our shared passion for musical theatre, we settled on a “three act” (three part) structure. As such, we need some cut points for the sonification. The first is when the all time high temperature for the entire history of Paso Robles was hit:\n\n\nCode\n## New high for Paso Robles\nchange_date_part_1 &lt;- which.max(monthly_weather$max);\nmonthly_weather[change_date_part_1,c(\"date\", \"max\", \"min\")]\n\n\n# A tibble: 1 × 3\n  date         max   min\n  &lt;date&gt;     &lt;int&gt; &lt;int&gt;\n1 1933-08-01   117    43\n\n\nAuditorially, we represent this change by splitting from only tracking the average to tracking both the maximum and the minimum.\nFor the second part, the year that climate scientists began building models predicting the increasing temperatures we have seen on a global scale, 1977. Auditorially, we represent this as adding back in the average, but also tracking every time a new seasonal extreme is reached, where we start the clock at 1977.\n\n\nCode\n## 1977 the year exxon scientists knew about climate change (allegedly)\nchange_date_part_2 &lt;- min(which(monthly_weather$year == 1977))\nmonthly_weather[change_date_part_2,]\n\n\n# A tibble: 1 × 19\n   year month   min  mean   max date       season season_color season_year\n  &lt;int&gt; &lt;fct&gt; &lt;int&gt; &lt;dbl&gt; &lt;int&gt; &lt;date&gt;     &lt;fct&gt;  &lt;chr&gt;              &lt;dbl&gt;\n1  1977 Jan      23  46.6    70 1977-01-01 Winter #2f77c3             1977\n# ℹ 10 more variables: season_label &lt;chr&gt;, xmin &lt;date&gt;, xmax &lt;date&gt;,\n#   seas_avg &lt;dbl&gt;, seas_max &lt;int&gt;, seas_min &lt;int&gt;, new_max &lt;lgl&gt;,\n#   new_min &lt;lgl&gt;, new_max_all_time &lt;lgl&gt;, new_min_all_time &lt;lgl&gt;",
+    "text": "Splitting into parts\nAfter a brief conversation with the choreographer, Josh Schneider, it was determined that having all three series (maximum, minimum, average) at once was a bit much for the full history of the data set. As an homage to our shared passion for musical theatre (Josh is the one with credentials beyond high school), we settled on a “three act” (three part) structure. So, we need some cut points for the sonification to define the 3 parts.\nThe first is when the all time high temperature for the entire history of Paso Robles was hit: 117 (F) in August 1933.\nAuditorially, we represent this change by splitting from only tracking the average to tracking both the maximum and the minimum.\nFor the second part, we chose the year that some climate scientists began building models predicting the increasing temperatures we have seen on a global scale (1977). It’s also the year Star Wars came out, so you can choose whichever of those reasons you like better.\n\n\nCode\nchange_date_part_1 &lt;- ymd(\"1910-01-01\") ## the start of the series \nchange_date_part_2 &lt;- monthly_weather[which.max(monthly_weather$max),\"date\"] %&gt;% pull()\nchange_date_part_2_index &lt;- which(monthly_weather$date == change_date_part_2)\nchange_date_part_3 &lt;- ymd(\"1977-01-01\")\nchange_date_part_3_index &lt;-  which(monthly_weather$date == change_date_part_3)",
     "crumbs": [
       "Sonification",
-      "Design"
+      "Sonification Design"
     ]
   },
   {
@@ -128,7 +128,7 @@
     "text": "Sonification method\nAn earlier project on sonifying five number summaries inspired the sonification design, which was in turn inspired by Flowers and Hauer (1993). Additional inspiration came from the work of Peres and Lane (2003) as well as the wonderful Sonification Handbook(2011), in particular, chapter 8.\nSonifcations are generated via the custom function data_to_sonif(), which maps the largest value in the data set to a pre-specified low note, and the highest value to a pre-specified low note, then maps values in between maintaining the spacing between points rounded to the 12 tone equal tempered scale. For example, see how we sonify the five number summary to one octave:\n\n\n\nVisualization of the pitch mapping sonification method.\n\n\n\n\nCode\nsource(\"code/data_to_soniof_all.R\")",
     "crumbs": [
       "Sonification",
-      "Design"
+      "Sonification Design"
     ]
   },
   {
@@ -136,10 +136,10 @@
     "href": "SonifDesign.html#part-1-just-averages",
     "title": "Sonification Design and Music",
     "section": "Part 1: Just averages",
-    "text": "Part 1: Just averages\nThe averages are sonified to a two octave range by mapping the lowest value to the low pitch of the range and the high note. As specified further below, the average will be played by a viola.\n\n\nCode\n## sonify first and last parts separately\nsonif_all_mean = c(\n  data_to_sonif_all(monthly_weather$mean[1:(change_date_part_1-1)], low = 3, high = 4),\n  data_to_sonif_all(monthly_weather$mean[change_date_part_1:(change_date_part_2-1)], low = 3, high = 4),\n  data_to_sonif_all(monthly_weather$mean[change_date_part_2:nrow(monthly_weather)], low = 3, high = 4)\n  )                                   \nsonif_all_mean[change_date_part_1:(change_date_part_2-1)] &lt;- NA\n\n\npattern = rep(\"eighth\", times = length(sonif_all_mean))\n## lines for avg and max \nline_avg &lt;- Line(pitches = sonif_all_mean, durations = pattern, \n                 name = \"Monthly Average\")",
+    "text": "Part 1: Just averages\nThe averages are sonified to a two octave range by mapping the lowest value to the low pitch of the range and the high note. As specified further below, the average will be played by a viola.\n\n\nCode\n## sonify first and last parts separately (so each part is scaled by its own max and min)\nsonif_all_mean = c(\n  data_to_sonif_all(monthly_weather$mean[1:(change_date_part_2_index-1)], low = 3, high = 4),\n  data_to_sonif_all(monthly_weather$mean[change_date_part_2_index:(change_date_part_3_index-1)], low = 3, high = 4),\n  data_to_sonif_all(monthly_weather$mean[change_date_part_3_index:nrow(monthly_weather)], low = 3, high = 4)\n  )                                   \nsonif_all_mean[change_date_part_2_index:(change_date_part_3_index-1)] &lt;- NA\n\n\npattern = rep(\"eighth\", times = length(sonif_all_mean))\n## lines for avg and max \nline_avg &lt;- Line(pitches = sonif_all_mean, durations = pattern, \n                 name = \"Monthly Average\")",
     "crumbs": [
       "Sonification",
-      "Design"
+      "Sonification Design"
     ]
   },
   {
@@ -147,10 +147,10 @@
     "href": "SonifDesign.html#part-2-highs-and-lows",
     "title": "Sonification Design and Music",
     "section": "Part 2: Highs and Lows",
-    "text": "Part 2: Highs and Lows\nThe variability of the monthly maximum temperatures is slightly higher than that of the monthly minimum (Range of max: {r}diff(range(monthly_weather$max, na.rm = T)), Range of min:{r}diff(range(monthly_weather$min, na.rm = T)); Standard deviation of max: 13.27, 8.52 ). To represent this difference auditorially, we allow the maximum to span 3 octaves (C5 to C8) and the minumum to span 2 octaves (C3 to C5). Note that the minimum has the same octave span as the mean, which has a range of {r}round(diff(range(monthly_weather$mean, na.rm = T)), 2) and a standard deviation of 9.22.\nAs defined below, the maximum is played by a celesta (a keyboard instrument) and the minimum is played by a bassoon.\n\n\nCode\nsonif_all_max = c(\n  data_to_sonif_all(monthly_weather$max[1:(change_date_part_1-1)], low = 5, high = 7),\n  data_to_sonif_all(monthly_weather$max[change_date_part_1:(change_date_part_2-1)], low = 5, high = 7),\n  data_to_sonif_all(monthly_weather$max[change_date_part_2:nrow(monthly_weather)], low = 5, high = 7)\n  )   \nsonif_all_max[1:change_date_part_1] &lt;- NA\n\nline_max &lt;- Line(pitches = sonif_all_max, durations = pattern, \n                 name = \"Monthly Max of Daily Maximum\")\n\nsonif_all_min = c(\n  data_to_sonif_all(monthly_weather$min[1:(change_date_part_1-1)], low = 3, high = 4),\n  data_to_sonif_all(monthly_weather$min[change_date_part_1:(change_date_part_2-1)], low = 3, high = 4),\n  data_to_sonif_all(monthly_weather$min[change_date_part_2:nrow(monthly_weather)], low = 3, high = 4)\n  )   \nsonif_all_min[1:change_date_part_1] &lt;- NA\n\nline_min &lt;- Line(pitches = sonif_all_min, durations = pattern, \n                 name = \"Monthly Min of Daily Minimum\")",
+    "text": "Part 2: Highs and Lows\nThe variability of the monthly maximum temperatures is slightly higher than that of the monthly minimum (Range of max: 57, Range of min:53 F; Standard deviation of max, min: 13.27 F, 8.52 F ). To represent this difference auditorially, we allow the maximum to span 3 octaves (C5 to C8) and the minumum to span 2 octaves (C3 to C5). Note that the minimum has the same octave span as the mean, which has a range of 40.5 F and a standard deviation of 9.22 F .\nAs defined below, the maximum is played by a celesta (a keyboard instrument) and the minimum is played by a bassoon.\n\n\nCode\nsonif_all_max = c(\n  data_to_sonif_all(monthly_weather$max[1:(change_date_part_2_index-1)], low = 5, high = 7),\n  data_to_sonif_all(monthly_weather$max[change_date_part_2_index:(change_date_part_3_index-1)], low = 5, high = 7),\n  data_to_sonif_all(monthly_weather$max[change_date_part_3_index:nrow(monthly_weather)], low = 5, high = 7)\n  )   \nsonif_all_max[1:change_date_part_2_index] &lt;- NA ## only average in part 1\n\nline_max &lt;- Line(pitches = sonif_all_max, durations = pattern, \n                 name = \"Monthly Max of Daily Maximum\") ## create the musical line\n\nsonif_all_min = c(\n  data_to_sonif_all(monthly_weather$min[1:(change_date_part_2_index-1)], low = 3, high = 4),\n  data_to_sonif_all(monthly_weather$min[change_date_part_2_index:(change_date_part_3_index-1)], low = 3, high = 4),\n  data_to_sonif_all(monthly_weather$min[change_date_part_3_index:nrow(monthly_weather)], low = 3, high = 4)\n  )   \nsonif_all_min[1:change_date_part_2_index] &lt;- NA\n\nline_min &lt;- Line(pitches = sonif_all_min, durations = pattern, \n                 name = \"Monthly Min of Daily Minimum\")",
     "crumbs": [
       "Sonification",
-      "Design"
+      "Sonification Design"
     ]
   },
   {
@@ -161,7 +161,7 @@
     "text": "Part 3: Exceedances\nWhile it is an issue that temperatures on average are increasing, it is not audible on the scales played here since the change is very slow over time. However, the average is not the only statistic available to us, and in times of change we don’t necessarily want an estimate of just “typical” values.\nOne important tool for understanding how the extremes of a time series are changing over time are exceedance occurrances: tracking when a new high or a new low is hit.\nIf we just tracked new all time highs and lows, we would essentially only capture the worst winter/summer. Instead, we start the tracker at 1977 for reasons mentioned above,and track each season (Winter, Spring, Summer, Fall) so we see a sudden influx of “new” maximums and minumums as we begin the tracking, but then once we initialize we can then track when unusually high or low values occurr. I set the pitches at middle C for both to avoid the sonification becoming too busy.\nAs defined later, the exceedances occurrances are played with a viola to elevate the importance of exceedance occurrances as a statistic along with the average, which is also played by the viola.\n\n\nCode\nsonif_all_new_max = rep(NA, times = length(sonif_all_mean))\nsonif_all_new_max[monthly_weather$new_max] &lt;- \"C4\"\nsonif_all_new_min = rep(NA, times = length(sonif_all_mean))\nsonif_all_new_min[monthly_weather$new_max] &lt;- \"C4\"\n\npattern_seas &lt;- rep(\"quarter\", times = length(sonif_all_max))\n\nline_max_new_seas &lt;- Line(pitches = sonif_all_new_max, durations = pattern, name = \"New Seasonal Maximum Reached\")\n\nline_min_new_seas &lt;- Line(pitches = sonif_all_new_max, durations = pattern, name = \"New Seasonal Minimum Reached\")",
     "crumbs": [
       "Sonification",
-      "Design"
+      "Sonification Design"
     ]
   },
   {
@@ -169,10 +169,10 @@
     "href": "SonifDesign.html#create-the-music",
     "title": "Sonification Design and Music",
     "section": "Create the music!",
-    "text": "Create the music!\nHere is where the instrumentation is actually added, and the music is outputted as an .mp3 file and/or score.\nThe choice of 12/8 time signature means that each measure is 1 year (12 months), with 4 beats felt per measure representing the four seasons, where each month is part of a seasonal triplet.\n\n\nCode\nmusic_all &lt;- Music() + Meter(12, 8) + \n  line_max + line_avg +  line_min + line_max_new_seas + line_min_new_seas + \n     Instrument(9, 1) +  ## monthly max, celesta\n     Instrument(42, 2)  + ## monthly average, viola\n     Instrument(71, 3) +  ## monthly min, bassoon\n     Instrument(42, 4) +  ## new high, viola\n     Instrument(42, 5) +  ## new low, viola\n  Tempo(120) \n\ngm::show(music_all, to = c(\"audio\"))\n\n\n\n\n\n\n\n\n\nCode\n# gm::export(music_all, \"music_sync.mscz\")\n gm::export(music_all, \"mmmm_sonification_paso_robles.pdf\")",
+    "text": "Create the music!\nHere is where the instrumentation is actually added, and the music is outputted as an .mp3 file and/or score.\nThe choice of 12/8 time signature means that each measure is 1 year (12 months), with 4 beats felt per measure representing the four seasons, where each month is part of a seasonal triplet.\n\nmusic_all &lt;- Music() + Meter(12, 8) + \n  line_max + line_avg +  line_min + line_max_new_seas + line_min_new_seas + \n     Instrument(9, 1) +  ## monthly max, celesta\n     Instrument(42, 2)  + ## monthly average, viola\n     Instrument(71, 3) +  ## monthly min, bassoon\n     Instrument(42, 4) +  ## new high, viola\n     Instrument(42, 5) +  ## new low, viola\n  Tempo(120) \n\ngm::show(music_all, to = c(\"audio\"))\n\n\n\n\n\n\n\n# gm::export(music_all, \"music_sync.mscz\")\n gm::export(music_all, \"mmmm_sonification_paso_robles.pdf\")",
     "crumbs": [
       "Sonification",
-      "Design"
+      "Sonification Design"
     ]
   },
   {
@@ -183,7 +183,18 @@
     "text": "Learning more\nContact Dr. Julia Schedler with questions or comments! Thanks for perceiving!",
     "crumbs": [
       "Sonification",
-      "Design"
+      "Sonification Design"
+    ]
+  },
+  {
+    "objectID": "SonifDesign.html#footnotes",
+    "href": "SonifDesign.html#footnotes",
+    "title": "Sonification Design and Music",
+    "section": "Footnotes",
+    "text": "Footnotes\n\n\nThe gm package is absolutely delightful and I think anyone who can read music should look at the vignette and make R play their favorite lyric’s melody!↩︎",
+    "crumbs": [
+      "Sonification",
+      "Sonification Design"
     ]
   },
   {
@@ -204,6 +215,83 @@
     "text": "Learning more\nContact Dr. Julia Schedler with questions or comments! Thanks for perceiving!",
     "crumbs": [
       "Sonification"
+    ]
+  },
+  {
+    "objectID": "animation.html",
+    "href": "animation.html",
+    "title": "Animation",
+    "section": "",
+    "text": "The animation was created using ggplot2 in R.\nThe data set has 1392 rows, corresponding to each month. However, the sonification lasts about 348 seconds, which means that if we just created a frame containing the plot for each incremental month we would have a frame rate of 1392/348 = 4 frames per second.\n4fps is abysmal, so each month actually has 7 or 8 frames each. These frames show the same data but slowly pan over the x-axis to create a nice, smooth panning effect in the final animation.\nI will share fully reproducible code when I clean it up a bit– here’s the gist:",
+    "crumbs": [
+      "Sonification",
+      "Animation Design"
+    ]
+  },
+  {
+    "objectID": "animation.html#how-long-is-the-sonification",
+    "href": "animation.html#how-long-is-the-sonification",
+    "title": "Animation",
+    "section": "How long is the sonification?",
+    "text": "How long is the sonification?\nWe start with the audio file generated in “Sonification Design” and build an animation to accompany it.\n\nffmpeg -i music_all_parts_sat.mp3 -t 348 -c:a libmp3lame -b:a 192k trimmed_music_new_T.mp3\nffprobe -v error -show_entries format=duration -of csv=\"p=0\" trimmed_music_new_T.mp3 &gt; audio_duration.txt",
+    "crumbs": [
+      "Sonification",
+      "Animation Design"
+    ]
+  },
+  {
+    "objectID": "animation.html#define-colors-for-the-visualization",
+    "href": "animation.html#define-colors-for-the-visualization",
+    "title": "Animation",
+    "section": "Define colors for the visualization",
+    "text": "Define colors for the visualization\n\nlibrary(tidyverse)\nlibrary(gganimate)\n\n## load the data used to create the sonification\nload(\"data/monthly_weather\")\nn &lt;- nrow(monthly_weather)\n\n## set colors to be used throughout \ncols &lt;- c(\"max\" = \"red\", \"min\" = \"blue\", \"mean\"=\"grey\", \"Winter\" = \"#2f77c3\", \"Spring\" = \"#61bf9a\", \"Summer\" = \"#f94994\", \"Fall\" =  \"#eb9911\")\n\nmonthly_weather$min_col &lt;- \"blue\"\nmonthly_weather$min_col[1:which.max(monthly_weather$max)] &lt;-  NA\nmonthly_weather$max_col &lt;- \"red\"\nmonthly_weather$max_col[1:which.max(monthly_weather$max)] &lt;-  NA\nmonthly_weather$avg_col &lt;- \"grey\"\nmonthly_weather$avg_col[which.max(monthly_weather$max):(min(which(monthly_weather$year ==1977))-1)] &lt;- NA\n\n## i think i don't need this but keeping until I verify FIXME\n# monthly_weather$window_start = c(rep(1909, times = 60), monthly_weather$year[61:n]-4)\n# monthly_weather$window_end = c(rep(1913, times = 60), monthly_weather$year[61:n]+1)\n\nopacity_matrix &lt;- matrix(rep(\"#00000000\", times = n^2), nrow = n)\ncolor_matrix &lt;- matrix(rep(\"#00000000\", times = n^2), nrow = n)\n\n## Want the opacity of the points to fade out\n## current season is entire\n## last season is 90\n## half year is 80\n## three is 70\n## year ago is 50\n## y ls 40\n## y hy 30\n## y 3s 20\n## 2y 10\n## otherwise 00\n## each row is a frame\n\n\n## Generate opacity matrix\nfor(i in 3:nrow(monthly_weather)){\n  current_season = which(monthly_weather$season_label == monthly_weather$season_label[i])\n  \n  color_matrix[i,1:i] &lt;- monthly_weather$season_color[1:i]\n                          \n  season_window &lt;- data.frame(\n  last_season_end = min(current_season)-c(1, 4, 7, 10, 13, 16, 19, 22),\n  last_season_start = min(current_season)-c(3, 6, 9, 12, 15, 18, 21, 24), \n  opacity = c(90, 80, 70, 50, 40, 30 , 20 , 10)\n  )\n  #if i &lt;24, need to truncate window\n  # only go back floor(i / 3) or current\n  \n  if(i&lt;25){\n    season_window &lt;- season_window[1:floor(i/3),]\n    season_window$last_season_start[season_window$last_season_start ==0] = 1\n  }\n  \n  for(j in 1:nrow(season_window)){\n    idx &lt;- season_window$last_season_start[j]:season_window$last_season_end[j]\n    opacity_matrix[i,idx] &lt;- paste0(color_matrix[i,idx], \n           rep(season_window$opacity[j], times = length(color_matrix[i,idx])))\n  }\n  opacity_matrix[i, current_season] &lt;- color_matrix[i,current_season] \n}\nopacity_matrix[1,1] &lt;- monthly_weather$season_color[1]\nopacity_matrix[2, 1:2] &lt;- monthly_weather$season_color[1:2]",
+    "crumbs": [
+      "Sonification",
+      "Animation Design"
+    ]
+  },
+  {
+    "objectID": "animation.html#getting-the-frame-rate-correct",
+    "href": "animation.html#getting-the-frame-rate-correct",
+    "title": "Animation",
+    "section": "Getting the frame rate correct",
+    "text": "Getting the frame rate correct\nNote that the audio appears to be at 80bpm rate for some confusing 12/8 reason and/or a MuseScore bug.\nWe want to have one year = 4 beats. Each beat is a season, and each month is 1/3 of a beat, since they are grouped into triplets.\nSince each beat is 3 data points, this means that each frame should last 0.75/3 = 0.25 seconds in order for things to sync up and give us a video that is 30fps. We want a total of 10440 = 348*30 frames (n frames), where each frame is shown for 0.25 seconds (80 bpm implies 4/3 beats per second which means each beat lasts 0.75 seconds).\nSo, we need 10440 frames but only have 1392 data points. Unfortunately for me, 10440/1392 = 7.5 frames per month (per data point), and we can’t have half a frame. So, we need half of the months to have 8 frames and half of the months to have 7. I used some support from ChatGPT on this part, although it did initially suggest I do all 8 frames followed by all 7 frames, which meant the animation slowly got out of sync with the audio (I figured out why on my own, though!).\nWe can also have more duplicates of frames to increase the frame rate and make it look smoother (i.e. 60fps), but will start with this.\nIn addition, these frames complicate the panning as well. If we just had 7 or 8 frames exactly the same, it would still look choppy and just have an unnecesarily large file size. So, I dynamically updated the plot limits to plan across the x-axis even while the monthly data point is fixed.\n\n## starting frame:\nstart_date &lt;- as.Date(\"1910-01-01\")\nend_date &lt;- as.Date(\"2025-12-01\")\nn_frames &lt;- 10440\n\nn_data &lt;- n\n\nframe_counts &lt;- rep(c(8,7), length.out = n_data) ## alternate 8 and 7 frames so audio does not get out of sync\n\nnow = NULL\nfor(i in 1:n_data){\n  now = c(now, rep(i, times = frame_counts[i]))\n}\n\n# Create a sequence of 'center' dates over the full data span\nframe_positions &lt;- scales::rescale(1:n_frames, to = c(1, nrow(monthly_weather)))\n\ncenter_dates &lt;- as.Date(\n  approx(x = seq_along(monthly_weather$date), \n         y = as.numeric(monthly_weather$date), \n         xout = frame_positions)$y,\n  origin = \"1970-01-01\"\n)\n\n\nwindow_width_days &lt;- 365.25 * 5  # approx 5 years\nhalf_window &lt;- window_width_days / 2\n\nwindow_starts &lt;- center_dates - half_window\nwindow_ends   &lt;- center_dates + half_window\n\n\n## check windows\nwindow_frame &lt;- data.frame(\n  window_starts, \n  monthly_weather$date[now],\n  center_dates,\n  window_ends, \n  window_ends &lt;center_dates, \n  window_ends &lt; monthly_weather$date[now]\n)",
+    "crumbs": [
+      "Sonification",
+      "Animation Design"
+    ]
+  },
+  {
+    "objectID": "animation.html#creating-the-frames",
+    "href": "animation.html#creating-the-frames",
+    "title": "Animation",
+    "section": "Creating the frames",
+    "text": "Creating the frames\nUsing some parallelization, I generated the very many frames and dumped them all into a folder with their filenames in order.\nI was getting down to the wire, so ChatGPT also helped me set up the parallelization. The plotting code was designed and iterated on by me (with some occasional help from ChatGPT if I was unsucccessful at fixing errors the “old fashioned” way– by trying to figure it out, then Googling.)\n\nlibrary(future.apply)\nlibrary(progressr)\n\nplan(multisession, workers = parallel::detectCores() - 1)\nhandlers(global = TRUE)\nhandlers(\"txtprogressbar\")  # or \"progress\", \"cli\", etc.\n\nwith_progress({\n  p &lt;- progressor(along = 1:n_frames)\n\n  future_lapply(1:n_frames, function(frame) {\n    monthly_weather$point_cols_min &lt;- monthly_weather$point_cols_max &lt;- monthly_weather$point_cols_avg&lt;- opacity_matrix[now[frame],]\n  monthly_weather$point_cols_min[1:which.max(monthly_weather$max)] &lt;-  NA\n  monthly_weather$point_cols_max[1:which.max(monthly_weather$max)] &lt;-  NA\n  monthly_weather$point_cols_avg[which.max(monthly_weather$max):(min(which(monthly_weather$year ==1977))-1)] &lt;- NA\n  \n  ## set up windows for plot\n  plot_dat &lt;- monthly_weather[1:now[frame],] %&gt;%\n  filter(date &gt;= window_starts[frame], date &lt;= window_ends[frame])\n  plot_start &lt;- window_starts[frame]\n  plot_end &lt;- window_ends[frame]\n  plot_lim &lt;- c(plot_start, plot_end)  \n\n\n  \n  plot_curr &lt;-  plot_dat %&gt;%\n    ggplot(aes(x = date))+\n    geom_segment(data = monthly_weather[1:now[frame],] %&gt;% filter(new_max), aes(x = date-2, xend = date+2, y =max, yend = 120, col = paste0(substr(point_cols_max, 1, 7), \"70\")), linewidth = 5 ) + \n    geom_text(data = monthly_weather[1:now[frame],] %&gt;% filter(new_max), aes(xintercept = date, col = substr(point_cols_max, 1, 7), y = 127, label = \"New \\n High\"), size = 10 ) + \n    geom_segment(data = monthly_weather[1:now[frame],] %&gt;% filter(new_min), aes(x = date-2, xend = date+2, y =-5, yend = min, col = paste0(substr(point_cols_max, 1, 7), \"70\")), linewidth = 5 ) + \n    geom_text(data = monthly_weather[1:now[frame],] %&gt;% filter(new_min), aes(xintercept = date, col = substr(point_cols_max, 1, 7), y = -10, label = \"New \\nLow\"), size = 10 ) + \n    geom_line(aes(y = min, color = min_col), linewidth=2) +\n    geom_point(aes(y = min, color = point_cols_min), size = 5) +\n    geom_line(aes(y = max, color = max_col), linewidth=2) +\n    geom_point(aes(y = max, color = point_cols_max), size = 5) +\n    geom_line(aes(y = mean, color = avg_col), linewidth=2) +\n    geom_point(aes(y = mean, color = point_cols_avg), size = 5) +\n    scale_color_identity(name = NULL, guide=\"none\") + \n    theme(axis.text.x = element_text(angle = 25)) +\n    coord_cartesian(xlim = plot_lim) + \n    ggtitle(paste(format(monthly_weather$date[now[frame]], \"%Y\")), \n                                subtitle = monthly_weather$season[now[frame]]) + \n    ylab(\"Temperature (F)\") + xlab(\"Time\") + theme_void(base_size = 12) +\n    theme(\n        plot.background = element_rect(fill = \"grey25\", color = NA),\n        panel.background = element_rect(fill = \"grey25\", color = NA),\n        panel.border = element_blank(),\n        axis.text = element_text(color = \"grey90\"),\n        axis.title = element_text(color = \"grey90\", size = 40),\n        plot.title = element_text(color = \"grey90\", size = 50),\n        axis.ticks.y = element_line(color = \"grey90\"),\n        panel.grid = element_blank(), \n        axis.text.x = element_blank(),\n        axis.text.y = element_text(size = 40, margin = margin(r = 5)),\n        axis.ticks.x = element_blank(), \n        axis.line = element_line(color = \"grey90\"),\n        axis.title.y = element_text(size = 70),\n        axis.title.x = element_text(size = 40),\n        axis.ticks.length = unit(0.25, \"cm\"),         \n        axis.ticks = element_line(size = 1.2), \n        plot.subtitle = element_text(color = monthly_weather$season_color[now[frame]], hjust = 1, margin = margin(r=15), size = 50)\n    )  + \n    scale_y_continuous(breaks = c(0, 25, 50, 75, 100), limits = c(-10, 127))\n  \n    \n  png(sprintf(\"animation/frame_%05d.png\", frame), width = 3840,       # in pixels\n        height = 2160,      # in pixels\n        res = 150,          # dots per inch\n        units = \"px\"    \n      )\n  \n   print(plot_curr)\n   \n   grid.text(\n    \"Min Temp\", \n    x = unit(0.85, \"npc\") - unit(10, \"pt\"),  # 10pt from the right edge\n    y = unit(0.3, \"npc\"),                 \n    just = \"right\",\n    gp = gpar(col = \"blue\", fontsize = 40)\n)\n   \n   grid.text(\n    \"Max Temp\", \n    x = unit(0.85, \"npc\") - unit(10, \"pt\"),  # 10pt from the right edge\n    y = unit(0.7, \"npc\"),                 \n    just = \"right\",\n    gp = gpar(col = \"red\", fontsize = 40)\n)\n   grid.text(\n    \"Avg Temp\", \n    x = unit(0.85, \"npc\") - unit(10, \"pt\"),  # 10pt from the right edge\n    y = unit(0.5, \"npc\"),                 \n    just = \"right\",\n    gp = gpar(col = \"grey\", fontsize = 40)\n)\n   \n   dev.off()\n   \n\n# update date\n    p(sprintf(\"Frame %d\", frame))  # notify progress bar\n    NULL  # or return something if needed\n  },future.packages = c(\"ggplot2\", \"dplyr\"), future.globals = TRUE)\n})",
+    "crumbs": [
+      "Sonification",
+      "Animation Design"
+    ]
+  },
+  {
+    "objectID": "animation.html#create-the-video",
+    "href": "animation.html#create-the-video",
+    "title": "Animation",
+    "section": "Create the video",
+    "text": "Create the video\nThis creates an animation without any sound.\n\nffmpeg -r 30 -start_number 1 -i animation/frame_%05d.png \\\n-c:v libx264 -pix_fmt yuv420p \\\n-movflags +faststart \\\nanimation_only_PENUL2.mp4",
+    "crumbs": [
+      "Sonification",
+      "Animation Design"
+    ]
+  },
+  {
+    "objectID": "animation.html#sync-audio",
+    "href": "animation.html#sync-audio",
+    "title": "Animation",
+    "section": "Sync audio",
+    "text": "Sync audio\nJust to be sure, we trim the music and format it as an .m4a because for some reason I don’t really understand that works better.\nThen, ffmpeg creates the final animation and sonification as an .mp4 file.\n\nffmpeg -i trimmed_music_new_T.mp3 -t 348.000000 -c:a aac -movflags +faststart trimmed_music_final.m4a\n\n\nffmpeg -i animation_only_PENUL2.mp4 -i trimmed_music_final.m4a \\\n-c:v copy -c:a aac -movflags +faststart -shortest \\\nanimation_synced_PENUL2.mp4",
+    "crumbs": [
+      "Sonification",
+      "Animation Design"
     ]
   },
   {
@@ -239,7 +327,7 @@
     "href": "News.html",
     "title": "News Stories",
     "section": "",
-    "text": "We made the KSBY (Central Coast local) News!\nCal Poly dancers bring climate data to life",
+    "text": "We made the KSBY (Central Coast local) News!\nKSBY won’t let me embed their video so click “Watch on Youtube” below.\nThere’s also a video at the written article link",
     "crumbs": [
       "News Stories"
     ]
