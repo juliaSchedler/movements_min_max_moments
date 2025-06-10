@@ -10,13 +10,13 @@ execute:
 
 For monthly temperature data, this file shows:
 
-  - data sourcing and processing 
-  - exploration of summary statistics at:
-    - full history
-    - monthly level
-    - seasonal level
-    - yearly level
-  - outputting of raw data for sonification
+-   data sourcing and processing
+-   exploration of summary statistics at:
+    -   full history
+    -   monthly level
+    -   seasonal level
+    -   yearly level
+-   outputting of raw data for sonification
 
 ```{r}
 #| label: setup
@@ -203,6 +203,7 @@ monthly_weather %>%
   geom_point(aes(y = mean, col = season))+
   scale_color_manual(values = plot_cols)
 ```
+
 Summer and winter are confirmed as the high and low points, and we see spring and fall on the appropriate "sides" of the distribution. We see these relative seasonal patterns in all three summary statistics, which makes sense: we expect the lowest high to be in winter, and the highest low to be in summer, and so on.
 
 Since months and seasons both capture the structure of the annual variation, we can aggregate to the monthly or seasonal level to gain additional insight to the series as a whole (without having to zoom in).
@@ -211,16 +212,17 @@ Since months and seasons both capture the structure of the annual variation, we 
 
 We will visually (plots) and numerically (tables) examine the following statistics:
 
-  - minimum of monthly mins
-  - mean of monthly means
-  - max of monthly maxxes
+-   minimum of monthly mins
+-   mean of monthly means
+-   max of monthly maxxes
 
 ### All Time Summary Statistics
+
 For the full history January 1900- May 2025.
 
-:::{.panel-tabset}
+::: panel-tabset
+## Histograms
 
-## Histograms 
 ```{r}
 #| label: all_time-histogram
 summary_table_all <- monthly_weather %>% 
@@ -278,7 +280,9 @@ monthly_weather %>%
   scale_color_manual(values = plot_cols)
 
 ```
+
 ## Boxplots
+
 ```{r}
 #| label: all_time-boxplot
 
@@ -317,7 +321,9 @@ monthly_weather %>%
   scale_color_manual(values = plot_cols)
 
 ```
+
 ## Table
+
 ```{r}
 #| label: all-time-table
 summary_table_all %>%
@@ -357,8 +363,9 @@ gt() %>%
 
 ### Monthly Level Summaries
 
-:::{.panel-tabset}
+::: panel-tabset
 ###### Plot (aggregated)
+
 ```{r}
 #| label: monthly-plot-agg
 
@@ -406,7 +413,9 @@ agg_plot<- summary_table %>%
 
 agg_plot
 ```
+
 ###### Plot (raw)
+
 ```{r}
 #| label: monthly-plot-raw
 agg_plot + 
@@ -421,7 +430,9 @@ agg_plot +
        axis.title.y = element_text(angle = 0, vjust = .5)) + 
   ylim(c(0,120))
 ```
+
 ###### Table
+
 ```{r}
 #| label: monthly-table
 
@@ -463,8 +474,9 @@ gt() %>%
 
 ### Seasonal Level Summaries
 
-:::{.panel-tabset}
+::: panel-tabset
 ###### Plot (aggregated)
+
 ```{r}
 #| label: seasonal-plot-agg
 summary_table_seasonal <- monthly_weather %>% 
@@ -511,7 +523,9 @@ summary_table_seasonal %>%
        axis.line = element_blank(), 
        axis.title.y = element_text(angle = 0, vjust = .5)) + ylim(c(0,120))
 ```
+
 ###### Plot (raw)
+
 ```{r}
 #| label: seasonal-plot-raw
 summary_table_seasonal %>% 
@@ -533,7 +547,9 @@ summary_table_seasonal %>%
        axis.line = element_blank(), 
        axis.title.y = element_text(angle = 0, vjust = .5))+ ylim(c(0, 120))
 ```
+
 ###### Histogram
+
 ```{r}
 #| label: all_time-histogram-seasonal
 
@@ -569,7 +585,9 @@ monthly_weather %>%
   scale_color_manual(values = plot_cols)
 
 ```
+
 ###### Table
+
 ```{r}
 #| label: seasonal-table
 summary_table_seasonal %>%
@@ -608,11 +626,10 @@ gt() %>%
 ```
 :::
 
-
-:::{.callout collapse="true" title="Yearly"}
-
-:::{.panel-tabset}
+:::: {.callout collapse="true" title="Yearly"}
+::: panel-tabset
 ###### Plot (aggregated)
+
 ```{r}
 #| label: yearly-plot-agg
 
@@ -661,7 +678,9 @@ agg_plot <- summary_table_yearly %>%
 
 agg_plot
 ```
+
 ###### Plot (raw)
+
 ```{r}
 #| label: yearly-plot-raw
 agg_plot + 
@@ -675,7 +694,9 @@ agg_plot +
        axis.line = element_blank(), 
        axis.title.y = element_text(angle = 0, vjust = .5))+ ylim(c(0, 120))
 ```
+
 ###### Plot (raw + seasonal)
+
 ```{r}
 #| label: yearly-plot-raw-seasonal
 agg_plot + 
@@ -689,7 +710,9 @@ agg_plot +
        axis.line = element_blank(), 
        axis.title.y = element_text(angle = 0, vjust = .5))+ ylim(c(0, 120))
 ```
+
 ###### Table
+
 ```{r}
 #| label: yearly-table
 
@@ -731,11 +754,12 @@ gt() %>%
 )
 ```
 :::
-:::
+::::
 
 ## Exceedances
 
 When the seasonal max or min reaches a new high or low, indicate this with a true/false.
+
 ```{r}
 #| label: compute-exceedances
 out <- monthly_weather %>%
@@ -757,8 +781,10 @@ monthly_weather$new_min <- out$new_min
 We can either set this to start from the beginning of the series, or start the “tracker” at a certain specific time. Since we will have three parts to our music and we want the exceedances to be part 3, we will start the tracker in 1977 (see Sonifcation Design page for reasoning behind choice of 1977).
 
 ### Overall Exceedance
-:::{.panel-tabset}
+
+::: panel-tabset
 ## All time exceedance
+
 ```{r}
 #| label: exceed-alltime
 out_all <- monthly_weather %>%
@@ -790,7 +816,9 @@ ggplot(aes(x = date)) +
                breaks = monthly_weather$xmin[monthly_weather$season == "Winter"& monthly_weather$season_year %%5 ==0]) +
   theme(axis.text.x = element_text(angle = 25))
 ```
+
 ## Exceedance since 1977
+
 ```{r}
 #| label: exceed-1977
 out <- monthly_weather %>%
@@ -824,16 +852,17 @@ ggplot(aes(x = date)) +
 ```
 :::
 
-Most of the all time highs occur in summer, and most all-time lows occur in winter. This is unsurprising, and basically a consequence of the statistics we are looking at and the properties of the maximum and the minimum. 
+Most of the all time highs occur in summer, and most all-time lows occur in winter. This is unsurprising, and basically a consequence of the statistics we are looking at and the properties of the maximum and the minimum.
 
 ### Seasonal Exceedances
 
-Since our goal is to summarize data for sonification, we want to make sure the information does not get frontloaded all at the beginning. So, looking at seasonal exceedances gives us more chances to hear extremes. 
+Since our goal is to summarize data for sonification, we want to make sure the information does not get frontloaded all at the beginning. So, looking at seasonal exceedances gives us more chances to hear extremes.
 
-Note that the unusually high fall temperatures are both for all time and if we start the "new extreme" timer in 1977. 
+Note that the unusually high fall temperatures are both for all time and if we start the "new extreme" timer in 1977.
 
-:::{.panel-tabset}
+::: panel-tabset
 ## All time seasonal exceedance
+
 ```{r}
 #| label: seas-exceed-alltime
 out_all <- monthly_weather %>%
@@ -866,7 +895,9 @@ ggplot(aes(x = date)) +
                breaks = monthly_weather$xmin[monthly_weather$season == "Winter"& monthly_weather$season_year %%5 ==0]) +
   theme(axis.text.x = element_text(angle = 25))
 ```
+
 ## Seasonal exceedance since 1977
+
 ```{r}
 #| label: seas-exeed-1977
 out <- monthly_weather %>%
@@ -901,15 +932,12 @@ ggplot(aes(x = date)) +
 ```
 :::
 
-
-
-
-
-
 ## Missing Data
+
 As you will hear (and see) in the animation, there are occasionally missing data points, resulting in silence!
 
 ### Monthly level missing data
+
 ```{r}
 #| label: monthly-missing
 ## code inspired by https://r-graph-gallery.com/79-levelplot-with-ggplot2.html
@@ -945,11 +973,25 @@ mutate(X = as.Date(X, "%Y-%m-%d"))%>%
        axis.title.y = element_text(angle = 0, vjust = .5))
 ```
 
-## Data for sonification 
-While busy, this is a visualization of the entire data set we will be working with for our sonification. 
+::: {.callout-note collapse="true"}
+## Missing data hidden by aggregation
 
-The full monthly history of the series is too much for one plot-- this is why we want to animate and/or sonify it-- to add a time dimension to our perceptualization and allowing us to "zoom in" as we did on the beginning of the series above. 
+Since we are looking at monthly level data, presumably, each data point represents the summary (average, max, min) of 28, 29, 30, or 31 data points. However, there are exceptions
 
+-   May 2025 values of all 3 summary statistics only include at most 9 points, since the data set was sourced May 9, 2025
+
+    -   May 9 is based on the date of a raw pdf file I believe I saved using my browser’s print to pdf function
+
+-   the NOWData tool only reports the monthly values, and does not indicate whether any of the daily (or lower level data that the daily values may be aggregated from) values were missing.
+
+    -   So it’s possible some other (besides known May 2025) monthly data points represent fewer values than expected due to missing data. There may be documentation on the NOAA site about this, please let me know if you are aware!
+:::
+
+## Data for sonification
+
+While busy, this is a visualization of the entire data set we will be working with for our sonification.
+
+The full monthly history of the series is too much for one plot-- this is why we want to animate and/or sonify it-- to add a time dimension to our perceptualization and allowing us to "zoom in" as we did on the beginning of the series above.
 
 ```{r}
 #| label: data-to-sonify
@@ -969,7 +1011,6 @@ ggplot(monthly_weather, aes(x = date)) +
                breaks = monthly_weather$xmin[monthly_weather$season == "Winter"& monthly_weather$season_year %%5 ==0]) +
   theme(axis.text.x = element_text(angle = 25))
 ```
-
 
 ## Output data
 

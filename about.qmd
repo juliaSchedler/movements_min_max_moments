@@ -5,7 +5,7 @@ title: "About Us"
 On the statistics side, sonification arose from prior joint work among Dr. Julia Schedler, Donya Behroozi, and Dr. Sinem Demirci.
 
 | Name | Role | Abount |
-|------------------------|------------------------|------------------------|
+|----|----|----|
 | [Dr. Julia Schedler](https://statistics.calpoly.edu/julia-schedler) | Conceptualization, data processing and sourcing, sonification design and implementation, animation. | Dr. Julia Schedler is Assistant Professor in the Statistics Department in the Bailey College of Science and Mathematics at Cal Poly SLO. Besides sonification, Dr. Schedler works on time series modeling, spatial modeling, and workflows for customizing learning experiences. |
 | Donya Behroozi | Conceptualization and sonification function code | Recent undergraduate and soon-to-be masters student at Cal Poly. |
 | [Dr. Sinem Demirci](https://statistics.calpoly.edu/sinem-demirci) | Conceptualization and project management | Lecturer in the Statistics Department in the Bailey College of Science and Mathematics at Cal Poly SLO. Dr. Demirci's research interests include Statistics and Data Science education and environmental and sustainability education. |

@@ -21,15 +21,16 @@ website:
       #     - href: snippets/everything.qmd
       #       text: Everything and Exceedances
              - href: SonifDesign.qmd
-               text: Design
+               text: "Sonification Design"
+             - href: animation.qmd
+               text: "Animation Design"
       - href: News.qmd
         text: "News Stories"
       - href: about.qmd
         text: "About Us"
     tools:
       - icon: github # Use the GitHub icon
-        href: https://github.com/YOUR_GITHUB_USERNAME/YOUR_REPOSITORY_NAME # Replace with your GitHub repository URL
-
+        href: https://github.com/juliaSchedler/movements_min_max_moments 
 
 format:
   html:

@@ -1,0 +1,327 @@
+---
+title: "Animation"
+format: 
+  html:
+    eval: false
+execute: 
+  freeze: auto
+---
+
+The animation was created using ggplot2 in R. 
+
+The data set has 1392 rows, corresponding to each month. However, the sonification lasts about 348 seconds, which means that if we just created a frame containing the plot for each incremental month we would have a frame rate of 1392/348 = 4 frames per second. 
+
+4fps is abysmal, so each month actually has 7 or 8 frames each. These frames show the same data but slowly pan over the x-axis to create a nice, smooth panning effect in the final animation. 
+
+I will share fully reproducible code when I clean it up a bit-- here's the gist:
+
+```{r}
+#| label: setup
+#| include: false
+
+knitr::opts_hooks$set(eval = function(options) {
+  if (options$engine == "bash") {
+    options$eval <- FALSE
+  }
+  options
+})
+
+```
+
+## How long is the sonification?
+
+We start with the audio file generated in "Sonification Design" and build an animation to accompany it. 
+
+```{text}
+ffmpeg -i music_all_parts_sat.mp3 -t 348 -c:a libmp3lame -b:a 192k trimmed_music_new_T.mp3
+ffprobe -v error -show_entries format=duration -of csv="p=0" trimmed_music_new_T.mp3 > audio_duration.txt
+```
+
+```{r}
+#| include: false
+audio_duration <- as.numeric(readLines("audio_duration.txt"))
+cat("Audio duration (seconds):", audio_duration)
+```
+
+## Define colors for the visualization
+
+```{r}
+#| label: process-data
+
+library(tidyverse)
+library(gganimate)
+
+## load the data used to create the sonification
+load("data/monthly_weather")
+n <- nrow(monthly_weather)
+
+## set colors to be used throughout 
+cols <- c("max" = "red", "min" = "blue", "mean"="grey", "Winter" = "#2f77c3", "Spring" = "#61bf9a", "Summer" = "#f94994", "Fall" =  "#eb9911")
+
+monthly_weather$min_col <- "blue"
+monthly_weather$min_col[1:which.max(monthly_weather$max)] <-  NA
+monthly_weather$max_col <- "red"
+monthly_weather$max_col[1:which.max(monthly_weather$max)] <-  NA
+monthly_weather$avg_col <- "grey"
+monthly_weather$avg_col[which.max(monthly_weather$max):(min(which(monthly_weather$year ==1977))-1)] <- NA
+
+## i think i don't need this but keeping until I verify FIXME
+# monthly_weather$window_start = c(rep(1909, times = 60), monthly_weather$year[61:n]-4)
+# monthly_weather$window_end = c(rep(1913, times = 60), monthly_weather$year[61:n]+1)
+
+opacity_matrix <- matrix(rep("#00000000", times = n^2), nrow = n)
+color_matrix <- matrix(rep("#00000000", times = n^2), nrow = n)
+
+## Want the opacity of the points to fade out
+## current season is entire
+## last season is 90
+## half year is 80
+## three is 70
+## year ago is 50
+## y ls 40
+## y hy 30
+## y 3s 20
+## 2y 10
+## otherwise 00
+## each row is a frame
+
+
+## Generate opacity matrix
+for(i in 3:nrow(monthly_weather)){
+  current_season = which(monthly_weather$season_label == monthly_weather$season_label[i])
+  
+  color_matrix[i,1:i] <- monthly_weather$season_color[1:i]
+                          
+  season_window <- data.frame(
+  last_season_end = min(current_season)-c(1, 4, 7, 10, 13, 16, 19, 22),
+  last_season_start = min(current_season)-c(3, 6, 9, 12, 15, 18, 21, 24), 
+  opacity = c(90, 80, 70, 50, 40, 30 , 20 , 10)
+  )
+  #if i <24, need to truncate window
+  # only go back floor(i / 3) or current
+  
+  if(i<25){
+    season_window <- season_window[1:floor(i/3),]
+    season_window$last_season_start[season_window$last_season_start ==0] = 1
+  }
+  
+  for(j in 1:nrow(season_window)){
+    idx <- season_window$last_season_start[j]:season_window$last_season_end[j]
+    opacity_matrix[i,idx] <- paste0(color_matrix[i,idx], 
+           rep(season_window$opacity[j], times = length(color_matrix[i,idx])))
+  }
+  opacity_matrix[i, current_season] <- color_matrix[i,current_season] 
+}
+opacity_matrix[1,1] <- monthly_weather$season_color[1]
+opacity_matrix[2, 1:2] <- monthly_weather$season_color[1:2]
+
+
+```
+
+## Getting the frame rate correct
+
+Note that the audio appears to be at 80bpm rate for some confusing 12/8 reason and/or a MuseScore bug.
+
+We want to have one year = 4 beats. Each beat is a season, and each month is 1/3 of a beat, since they are grouped into triplets.
+
+Since each beat is 3 data points, this means that each frame should last 0.75/3 = 0.25 seconds in order for things to sync up and give us a video that is 30fps. We want a total of 10440 = 348*30 frames (n frames), where each frame is shown for 0.25 seconds (80 bpm implies 4/3 beats per second which means each beat lasts 0.75 seconds). 
+
+So, we need 10440 frames but only have 1392 data points. Unfortunately for me, 10440/1392 = 7.5 frames per month (per data point), and we can't have half a frame. So, we need half of the months to have 8 frames and half of the months to have 7. I used some support from ChatGPT on this part, although it did initially suggest I do all 8 frames followed by all 7 frames, which meant the animation slowly got out of sync with the audio (I figured out why on my own, though!).
+
+
+We can also have more duplicates of frames to increase the frame rate and make it look smoother (i.e. 60fps), but will start with this.
+
+In addition, these frames complicate the panning as well. If we just had 7 or 8 frames exactly the same, it would still look choppy and just have an unnecesarily large file size. So, I dynamically updated the plot limits to plan across the x-axis even while the monthly data point is fixed. 
+
+```{r}
+#| eval: false
+#| label: set_up_frames_windows
+
+## starting frame:
+start_date <- as.Date("1910-01-01")
+end_date <- as.Date("2025-12-01")
+n_frames <- 10440
+
+n_data <- n
+
+frame_counts <- rep(c(8,7), length.out = n_data) ## alternate 8 and 7 frames so audio does not get out of sync
+
+now = NULL
+for(i in 1:n_data){
+  now = c(now, rep(i, times = frame_counts[i]))
+}
+
+# Create a sequence of 'center' dates over the full data span
+frame_positions <- scales::rescale(1:n_frames, to = c(1, nrow(monthly_weather)))
+
+center_dates <- as.Date(
+  approx(x = seq_along(monthly_weather$date), 
+         y = as.numeric(monthly_weather$date), 
+         xout = frame_positions)$y,
+  origin = "1970-01-01"
+)
+
+
+window_width_days <- 365.25 * 5  # approx 5 years
+half_window <- window_width_days / 2
+
+window_starts <- center_dates - half_window
+window_ends   <- center_dates + half_window
+
+
+## check windows
+window_frame <- data.frame(
+  window_starts, 
+  monthly_weather$date[now],
+  center_dates,
+  window_ends, 
+  window_ends <center_dates, 
+  window_ends < monthly_weather$date[now]
+)
+```
+
+## Creating the frames
+
+Using some parallelization, I generated the very many frames and dumped them all into a folder with their filenames in order. 
+
+I was getting down to the wire, so ChatGPT also helped me set up the parallelization. The plotting code was designed and iterated on by me (with some occasional help from ChatGPT if I was unsucccessful at fixing errors the "old fashioned" way-- by trying to figure it out, then Googling.)
+
+```{r}
+#| message: false
+#| warning: false
+#| eval: false
+
+library(future.apply)
+library(progressr)
+
+plan(multisession, workers = parallel::detectCores() - 1)
+handlers(global = TRUE)
+handlers("txtprogressbar")  # or "progress", "cli", etc.
+
+with_progress({
+  p <- progressor(along = 1:n_frames)
+
+  future_lapply(1:n_frames, function(frame) {
+    monthly_weather$point_cols_min <- monthly_weather$point_cols_max <- monthly_weather$point_cols_avg<- opacity_matrix[now[frame],]
+  monthly_weather$point_cols_min[1:which.max(monthly_weather$max)] <-  NA
+  monthly_weather$point_cols_max[1:which.max(monthly_weather$max)] <-  NA
+  monthly_weather$point_cols_avg[which.max(monthly_weather$max):(min(which(monthly_weather$year ==1977))-1)] <- NA
+  
+  ## set up windows for plot
+  plot_dat <- monthly_weather[1:now[frame],] %>%
+  filter(date >= window_starts[frame], date <= window_ends[frame])
+  plot_start <- window_starts[frame]
+  plot_end <- window_ends[frame]
+  plot_lim <- c(plot_start, plot_end)  
+
+
+  
+  plot_curr <-  plot_dat %>%
+    ggplot(aes(x = date))+
+    geom_segment(data = monthly_weather[1:now[frame],] %>% filter(new_max), aes(x = date-2, xend = date+2, y =max, yend = 120, col = paste0(substr(point_cols_max, 1, 7), "70")), linewidth = 5 ) + 
+    geom_text(data = monthly_weather[1:now[frame],] %>% filter(new_max), aes(xintercept = date, col = substr(point_cols_max, 1, 7), y = 127, label = "New \n High"), size = 10 ) + 
+    geom_segment(data = monthly_weather[1:now[frame],] %>% filter(new_min), aes(x = date-2, xend = date+2, y =-5, yend = min, col = paste0(substr(point_cols_max, 1, 7), "70")), linewidth = 5 ) + 
+    geom_text(data = monthly_weather[1:now[frame],] %>% filter(new_min), aes(xintercept = date, col = substr(point_cols_max, 1, 7), y = -10, label = "New \nLow"), size = 10 ) + 
+    geom_line(aes(y = min, color = min_col), linewidth=2) +
+    geom_point(aes(y = min, color = point_cols_min), size = 5) +
+    geom_line(aes(y = max, color = max_col), linewidth=2) +
+    geom_point(aes(y = max, color = point_cols_max), size = 5) +
+    geom_line(aes(y = mean, color = avg_col), linewidth=2) +
+    geom_point(aes(y = mean, color = point_cols_avg), size = 5) +
+    scale_color_identity(name = NULL, guide="none") + 
+    theme(axis.text.x = element_text(angle = 25)) +
+    coord_cartesian(xlim = plot_lim) + 
+    ggtitle(paste(format(monthly_weather$date[now[frame]], "%Y")), 
+                                subtitle = monthly_weather$season[now[frame]]) + 
+    ylab("Temperature (F)") + xlab("Time") + theme_void(base_size = 12) +
+    theme(
+        plot.background = element_rect(fill = "grey25", color = NA),
+        panel.background = element_rect(fill = "grey25", color = NA),
+        panel.border = element_blank(),
+        axis.text = element_text(color = "grey90"),
+        axis.title = element_text(color = "grey90", size = 40),
+        plot.title = element_text(color = "grey90", size = 50),
+        axis.ticks.y = element_line(color = "grey90"),
+        panel.grid = element_blank(), 
+        axis.text.x = element_blank(),
+        axis.text.y = element_text(size = 40, margin = margin(r = 5)),
+        axis.ticks.x = element_blank(), 
+        axis.line = element_line(color = "grey90"),
+        axis.title.y = element_text(size = 70),
+        axis.title.x = element_text(size = 40),
+        axis.ticks.length = unit(0.25, "cm"),         
+        axis.ticks = element_line(size = 1.2), 
+        plot.subtitle = element_text(color = monthly_weather$season_color[now[frame]], hjust = 1, margin = margin(r=15), size = 50)
+    )  + 
+    scale_y_continuous(breaks = c(0, 25, 50, 75, 100), limits = c(-10, 127))
+  
+    
+  png(sprintf("animation/frame_%05d.png", frame), width = 3840,       # in pixels
+        height = 2160,      # in pixels
+        res = 150,          # dots per inch
+        units = "px"    
+      )
+  
+   print(plot_curr)
+   
+   grid.text(
+    "Min Temp", 
+    x = unit(0.85, "npc") - unit(10, "pt"),  # 10pt from the right edge
+    y = unit(0.3, "npc"),                 
+    just = "right",
+    gp = gpar(col = "blue", fontsize = 40)
+)
+   
+   grid.text(
+    "Max Temp", 
+    x = unit(0.85, "npc") - unit(10, "pt"),  # 10pt from the right edge
+    y = unit(0.7, "npc"),                 
+    just = "right",
+    gp = gpar(col = "red", fontsize = 40)
+)
+   grid.text(
+    "Avg Temp", 
+    x = unit(0.85, "npc") - unit(10, "pt"),  # 10pt from the right edge
+    y = unit(0.5, "npc"),                 
+    just = "right",
+    gp = gpar(col = "grey", fontsize = 40)
+)
+   
+   dev.off()
+   
+
+# update date
+    p(sprintf("Frame %d", frame))  # notify progress bar
+    NULL  # or return something if needed
+  },future.packages = c("ggplot2", "dplyr"), future.globals = TRUE)
+})
+```
+
+
+## Create the video
+
+This creates an animation without any sound.
+
+```{text}
+ffmpeg -r 30 -start_number 1 -i animation/frame_%05d.png \
+-c:v libx264 -pix_fmt yuv420p \
+-movflags +faststart \
+animation_only_PENUL2.mp4
+```
+
+
+## Sync audio
+
+Just to be sure, we trim the music and format it as an .m4a because for some reason I don't really understand that works better.
+
+
+Then, `ffmpeg` creates the final animation and sonification as an .mp4 file. 
+
+```{text}
+ffmpeg -i trimmed_music_new_T.mp3 -t 348.000000 -c:a aac -movflags +faststart trimmed_music_final.m4a
+
+
+ffmpeg -i animation_only_PENUL2.mp4 -i trimmed_music_final.m4a \
+-c:v copy -c:a aac -movflags +faststart -shortest \
+animation_synced_PENUL2.mp4
+```
